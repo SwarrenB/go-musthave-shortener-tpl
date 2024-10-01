@@ -61,9 +61,10 @@ func webhook(w http.ResponseWriter, r *http.Request) {
 		} else {
 			result := GenerateURL(5)
 			vocabulary[string(body)] = string(result)
-			w.Write(result)
-			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusCreated)
+			w.Header().Add("Content-Type", "text/plain")
+			w.Write(result)
+			return
 		}
 	}
 }
