@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"golang.org/x/exp/rand"
+	"math/rand/v2"
 )
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -15,7 +15,7 @@ var vocabulary = make(map[string]string)
 func GenerateURL(n int) []byte {
 	b := "http://localhost:8080/"
 	for i := 0; i < n; i++ {
-		b += string(letters[rand.Intn(len(letters))])
+		b += string(letters[rand.IntN(len(letters))])
 	}
 	return []byte(b)
 }
