@@ -20,14 +20,12 @@ func GenerateURL(n int) []byte {
 	return []byte(b)
 }
 
-// функция main вызывается автоматически при запуске приложения
 func main() {
 	if err := run(); err != nil {
 		panic(err)
 	}
 }
 
-// функция run будет полезна при инициализации зависимостей сервера перед запуском
 func run() error {
 	return http.ListenAndServe(`:8080`, middleware(http.HandlerFunc(webhook)))
 }
@@ -39,7 +37,6 @@ func middleware(next http.Handler) http.Handler {
 	})
 }
 
-// функция webhook — обработчик HTTP-запроса
 func webhook(w http.ResponseWriter, r *http.Request) {
 	correctRequest := r.Method != http.MethodPost && r.Method != http.MethodGet && r.Header.Get("Content-Type") != "text/plain"
 	if correctRequest {
