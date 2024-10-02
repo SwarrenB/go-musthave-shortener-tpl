@@ -27,12 +27,12 @@ func main() {
 }
 
 func run() error {
-	return http.ListenAndServe(`:8080`, middleware(http.HandlerFunc(webhook)))
+	return http.ListenAndServe(`:8081`, middleware(http.HandlerFunc(webhook)))
 }
 
 func middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Add("Content-Type", "text/plain")
 		next.ServeHTTP(w, r)
 	})
 }
@@ -43,9 +43,9 @@ func webhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "This request is not allowed.", http.StatusBadRequest)
 		return
 	} else if r.Method == http.MethodGet {
-		id := r.Host[strings.LastIndex(r.Host, "/"):]
+		id := r.URL.Path[strings.Index(r.Host, "/"):]
 		key, val := vocabulary[id]
-		if val {
+		if val && len(vocabulary) != 0 {
 			w.Header().Add("Location", key)
 			w.WriteHeader(307)
 		} else {
@@ -62,7 +62,6 @@ func webhook(w http.ResponseWriter, r *http.Request) {
 			result := GenerateURL(5)
 			vocabulary[string(body)] = string(result)
 			w.WriteHeader(http.StatusCreated)
-			w.Header().Add("Content-Type", "text/plain")
 			w.Write(result)
 			return
 		}
