@@ -27,7 +27,7 @@ func main() {
 }
 
 func run() error {
-	return http.ListenAndServe(`:8081`, middleware(http.HandlerFunc(webhook)))
+	return http.ListenAndServe(`:8080`, middleware(http.HandlerFunc(webhook)))
 }
 
 func middleware(next http.Handler) http.Handler {
