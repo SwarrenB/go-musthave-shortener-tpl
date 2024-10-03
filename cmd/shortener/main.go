@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"math/rand/v2"
 )
@@ -28,12 +30,12 @@ func main() {
 func run() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc(`/`, postRequestHandler)
-	mux.HandleFunc(`/{id}`, getRequestHandler)
-	return http.ListenAndServe(`:8080`, mux)
+	mux.HandleFunc(`/{id}/`, getRequestHandler)
+	return http.ListenAndServe(`:8081`, mux)
 }
 
 func checkCorrectRequest(w http.ResponseWriter, r *http.Request) {
-	correctRequest := r.Method != http.MethodPost && r.Method != http.MethodGet && r.Header.Get("Content-Type") != "text/plain"
+	correctRequest := r.Method != http.MethodPost && r.Method != http.MethodGet
 	if correctRequest {
 		http.Error(w, "This request is not allowed.", http.StatusBadRequest)
 	}
@@ -49,7 +51,7 @@ func postRequestHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			result := GenerateURL(rand.IntN(int(len(body))))
-			vocabulary[string(`/{result}`)] = string(body)
+			vocabulary[string(result)] = string(body)
 			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusCreated)
 			w.Write(result)
@@ -59,16 +61,17 @@ func postRequestHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRequestHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
+	if r.Method == http.MethodGet {
 		checkCorrectRequest(w, r)
-		id := r.URL.Path
-		key, ok := vocabulary[id]
+		id := strings.Join([]string{"http://localhost:8080", r.URL.Path}, "")
+		val, ok := vocabulary[id]
 		if ok {
 			w.Header().Add("Content-Type", "text/plain")
-			w.Header().Add("Location", key)
+			w.Header().Add("Location", val)
 			w.WriteHeader(307)
 		} else {
-			http.Error(w, "This request is not allowed.", http.StatusBadRequest)
+			fmt.Println(vocabulary)
+			http.Error(w, vocabulary[id], http.StatusBadRequest)
 		}
 		return
 	}
