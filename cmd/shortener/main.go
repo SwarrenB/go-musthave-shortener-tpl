@@ -31,7 +31,7 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc(`/`, postRequestHandler)
 	mux.HandleFunc(`/{id}/`, getRequestHandler)
-	return http.ListenAndServe(`:8081`, mux)
+	return http.ListenAndServe(`:8080`, mux)
 }
 
 func checkCorrectRequest(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +71,7 @@ func getRequestHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(307)
 		} else {
 			fmt.Println(vocabulary)
-			http.Error(w, vocabulary[id], http.StatusBadRequest)
+			http.Error(w, "This URL does not exist in vocabulary.", http.StatusBadRequest)
 		}
 		return
 	}
