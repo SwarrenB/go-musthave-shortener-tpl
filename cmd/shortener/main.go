@@ -3,7 +3,6 @@ package main
 import (
 	"io"
 	"net/http"
-	"strings"
 
 	"math/rand/v2"
 )
@@ -27,43 +26,50 @@ func main() {
 }
 
 func run() error {
-	return http.ListenAndServe(`:8080`, middleware(http.HandlerFunc(webhook)))
+	mux := http.NewServeMux()
+	mux.HandleFunc(`/`, postRequestHandler)
+	mux.HandleFunc(`/{id}`, getRequestHandler)
+	return http.ListenAndServe(`:8080`, mux)
 }
 
-func middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "text/plain")
-		next.ServeHTTP(w, r)
-	})
-}
-
-func webhook(w http.ResponseWriter, r *http.Request) {
+func checkCorrectRequest(w http.ResponseWriter, r *http.Request) {
 	correctRequest := r.Method != http.MethodPost && r.Method != http.MethodGet && r.Header.Get("Content-Type") != "text/plain"
 	if correctRequest {
 		http.Error(w, "This request is not allowed.", http.StatusBadRequest)
-		return
-	} else if r.Method == http.MethodGet {
-		id := r.URL.Path[strings.Index(r.Host, "/"):]
-		key, val := vocabulary[id]
-		if val && len(vocabulary) != 0 {
-			w.Header().Add("Location", key)
-			w.WriteHeader(307)
-		} else {
-			http.Error(w, "This request is not allowed.", http.StatusBadRequest)
-		}
-		return
-	} else {
+	}
+}
+
+func postRequestHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		checkCorrectRequest(w, r)
 		body, _ := io.ReadAll(r.Body)
 		isURL := string(body[0:4])
 		if isURL != "http" {
 			http.Error(w, "URL is invalid.", http.StatusBadRequest)
 			return
 		} else {
-			result := GenerateURL(5)
-			vocabulary[string(body)] = string(result)
+			result := GenerateURL(rand.IntN(int(len(body))))
+			vocabulary[string(`/{result}`)] = string(body)
+			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusCreated)
 			w.Write(result)
 			return
 		}
+	}
+}
+
+func getRequestHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		checkCorrectRequest(w, r)
+		id := r.URL.Path
+		key, ok := vocabulary[id]
+		if ok {
+			w.Header().Add("Content-Type", "text/plain")
+			w.Header().Add("Location", key)
+			w.WriteHeader(307)
+		} else {
+			http.Error(w, "This request is not allowed.", http.StatusBadRequest)
+		}
+		return
 	}
 }
