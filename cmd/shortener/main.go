@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -30,7 +29,7 @@ func main() {
 func run() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc(`/`, postRequestHandler)
-	mux.HandleFunc(`/{id}/`, getRequestHandler)
+	mux.HandleFunc(`/{id}`, getRequestHandler)
 	return http.ListenAndServe(`:8080`, mux)
 }
 
@@ -70,7 +69,6 @@ func getRequestHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Location", val)
 			w.WriteHeader(307)
 		} else {
-			fmt.Println(vocabulary)
 			http.Error(w, "This URL does not exist in vocabulary.", http.StatusBadRequest)
 		}
 		return
