@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +48,10 @@ func Test_postRequestHandler(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(test.body))
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
-			postRequestHandler(w, request)
+			// postRequestHandler(w, request)
+			c, _ := gin.CreateTestContext(w)
+			c.Request = request
+			ginPostRequestHandler(c)
 
 			res := w.Result()
 			// проверяем код ответа
@@ -100,8 +104,10 @@ func Test_getRequestHandler(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, key, nil)
 				// создаём новый Recorder
 				w := httptest.NewRecorder()
-				getRequestHandler(w, request)
-
+				// getRequestHandler(w, request)
+				c, _ := gin.CreateTestContext(w)
+				c.Request = request
+				ginGetRequestHandler(c)
 				res := w.Result()
 				// проверяем код ответа
 				assert.Equal(t, test.args.code, res.StatusCode)
