@@ -62,6 +62,19 @@ func Test_postRequestHandler(t *testing.T) {
 	}
 }
 
+var testUrls = []string{
+	"http://practictum.yandex.ru",
+	"http://vk.com",
+	"https://yandex.ru",
+	"https://github.com",
+}
+
+func fillVocabulary(vocabulary map[string]string) {
+	for _, url := range testUrls {
+		vocabulary[string(GenerateURL(len(url)))] = url
+	}
+}
+
 func Test_getRequestHandler(t *testing.T) {
 	type args struct {
 		code        int
@@ -80,6 +93,7 @@ func Test_getRequestHandler(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+	fillVocabulary(vocabulary)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for key, value := range vocabulary {
