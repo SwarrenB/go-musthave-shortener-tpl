@@ -65,7 +65,6 @@ func Test_postRequestHandler(t *testing.T) {
 func Test_getRequestHandler(t *testing.T) {
 	type args struct {
 		code        int
-		location    string
 		contentType string
 	}
 	tests := []struct {
@@ -76,7 +75,6 @@ func Test_getRequestHandler(t *testing.T) {
 			name: "Normal case #1",
 			args: args{
 				code:        http.StatusTemporaryRedirect,
-				location:    "https://yandex.practicum.ru",
 				contentType: "text/plain; charset=UTF-8",
 			},
 		},
@@ -85,18 +83,19 @@ func Test_getRequestHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for key, value := range vocabulary {
-				request := httptest.NewRequest(http.MethodGet, strings.Join([]string{"/", value}, ""), nil)
+				request := httptest.NewRequest(http.MethodGet, strings.Join([]string{"/", key}, ""), nil)
 				// создаём новый Recorder
 				w := httptest.NewRecorder()
 				getRequestHandler(w, request)
 
 				res := w.Result()
 				// проверяем код ответа
-				assert.Equal(t, test.args.code, res.StatusCode)
-				// получаем и проверяем тело запроса
+				require.Equal(t, test.args.code, res.StatusCode)
 
-				assert.Equal(t, key, res.Header.Get("Location"))
-				assert.Equal(t, test.args.contentType, res.Header.Get("Content-Type"))
+				defer res.Body.Close()
+
+				assert.Equal(t, value, res.Header.Get("Location"))
+				assert.Equal(t, strings.ToLower(test.args.contentType), strings.ToLower(res.Header.Get("Content-Type")))
 			}
 		})
 	}
