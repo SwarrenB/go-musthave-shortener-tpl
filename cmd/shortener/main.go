@@ -51,7 +51,7 @@ func postRequestHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			result := GenerateURL(rand.IntN(int(len(body))))
 			vocabulary[string(result)] = string(body)
-			w.Header().Add("Content-Type", "text/plain")
+			w.Header().Add("Content-Type", "text/plain; charset=UTF-8")
 			w.WriteHeader(http.StatusCreated)
 			w.Write(result)
 			return
@@ -65,7 +65,7 @@ func getRequestHandler(w http.ResponseWriter, r *http.Request) {
 		id := strings.Join([]string{"http://localhost:8080", r.URL.Path}, "")
 		val, ok := vocabulary[id]
 		if ok {
-			w.Header().Add("Content-Type", "text/plain")
+			w.Header().Add("Content-Type", "text/plain; charset=UTF-8")
 			w.Header().Add("Location", val)
 			w.WriteHeader(307)
 		} else {
