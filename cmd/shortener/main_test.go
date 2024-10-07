@@ -71,7 +71,8 @@ var testUrls = []string{
 
 func fillVocabulary(vocabulary map[string]string) {
 	for _, url := range testUrls {
-		vocabulary[string(GenerateURL(len(url)))] = url
+		convertedUrl := strings.Join([]string{"http://localhost:8080/", string(GenerateURL(len(url)))}, "")
+		vocabulary[convertedUrl] = url
 	}
 }
 
