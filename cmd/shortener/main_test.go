@@ -71,8 +71,7 @@ var testUrls = []string{
 
 func fillVocabulary(vocabulary map[string]string) {
 	for _, url := range testUrls {
-		convertedUrl := strings.Join([]string{"http://localhost:8080/", string(GenerateURL(len(url)))}, "")
-		vocabulary[convertedUrl] = url
+		vocabulary[string(GenerateURL(len(url)))] = url
 	}
 }
 
@@ -98,7 +97,7 @@ func Test_getRequestHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for key, value := range vocabulary {
-				request := httptest.NewRequest(http.MethodGet, strings.Join([]string{"/", value}, ""), nil)
+				request := httptest.NewRequest(http.MethodGet, key, nil)
 				// создаём новый Recorder
 				w := httptest.NewRecorder()
 				getRequestHandler(w, request)
@@ -109,7 +108,7 @@ func Test_getRequestHandler(t *testing.T) {
 
 				defer res.Body.Close()
 
-				assert.Equal(t, key, res.Header.Get("Location"))
+				assert.Equal(t, value, res.Header.Get("Location"))
 				assert.Equal(t, strings.ToLower(test.args.contentType), strings.ToLower(res.Header.Get("Content-Type")))
 			}
 		})
