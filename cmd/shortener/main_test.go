@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,6 +44,7 @@ func Test_postRequestHandler(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
+	appConfig := config.CreateConfig()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(test.body))
@@ -51,8 +53,8 @@ func Test_postRequestHandler(t *testing.T) {
 			// postRequestHandler(w, request)
 			c, _ := gin.CreateTestContext(w)
 			c.Request = request
-			ginPostRequestHandler(c)
-
+			handler := ginPostRequestHandler(appConfig)
+			handler(c)
 			res := w.Result()
 			// проверяем код ответа
 			assert.Equal(t, test.args.code, res.StatusCode)
@@ -73,9 +75,9 @@ var testUrls = []string{
 	"https://github.com",
 }
 
-func fillVocabulary(vocabulary map[string]string) {
+func fillVocabulary(vocabulary map[string]string, defaultURL string) {
 	for _, url := range testUrls {
-		vocabulary[string(GenerateURL(len(url)))] = url
+		vocabulary[string(GenerateURL(len(url), defaultURL))] = url
 	}
 }
 
@@ -97,7 +99,8 @@ func Test_getRequestHandler(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
-	fillVocabulary(vocabulary)
+	appConfig := config.CreateConfig()
+	fillVocabulary(vocabulary, appConfig.GetConfigURL())
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for key, value := range vocabulary {
@@ -107,7 +110,8 @@ func Test_getRequestHandler(t *testing.T) {
 				// getRequestHandler(w, request)
 				c, _ := gin.CreateTestContext(w)
 				c.Request = request
-				ginGetRequestHandler(c)
+				handler := ginGetRequestHandler(appConfig)
+				handler(c)
 				res := w.Result()
 				// проверяем код ответа
 				assert.Equal(t, test.args.code, res.StatusCode)

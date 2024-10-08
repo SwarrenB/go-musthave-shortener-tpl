@@ -4,7 +4,9 @@ import (
 	"io"
 	"math/rand/v2"
 	"net/http"
+	"strings"
 
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,8 +14,8 @@ const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var vocabulary = make(map[string]string)
 
-func GenerateURL(n int) []byte {
-	b := "http://localhost:8080/"
+func GenerateURL(n int, defaultURL string) []byte {
+	b := defaultURL
 	for i := 0; i < n; i++ {
 		b += string(letters[rand.IntN(len(letters))])
 	}
@@ -27,9 +29,10 @@ func main() {
 }
 
 func run() error {
+	appConfig := config.CreateConfigWithFlags()
 	router := gin.Default()
-	router.GET("/:id", ginGetRequestHandler)
-	router.POST("/", ginPostRequestHandler)
+	router.GET("/{id}", ginGetRequestHandler(appConfig))
+	router.POST("/", ginPostRequestHandler(appConfig))
 	// mux := http.NewServeMux()
 	// mux.HandleFunc(`/`, postRequestHandler)
 	// mux.HandleFunc(`/:id`, getRequestHandler)
@@ -45,18 +48,20 @@ func run() error {
 // 	}
 // }
 
-func ginPostRequestHandler(c *gin.Context) {
-	body, err := io.ReadAll(c.Request.Body)
-	isURL := string(body[0:4])
-	if err != nil || isURL != "http" {
-		c.String(http.StatusBadRequest, "URL is invalid.")
-		return
-	} else {
-		result := GenerateURL(rand.IntN(int(len(body))))
-		vocabulary[string(result)] = string(body)
-		c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-		c.String(http.StatusCreated, string(result))
-		return
+func ginPostRequestHandler(appConfig *config.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		body, err := io.ReadAll(c.Request.Body)
+		isURL := string(body[0:4]) == "http"
+		if err != nil || !isURL {
+			c.String(http.StatusBadRequest, "URL is invalid.")
+			return
+		} else {
+			result := GenerateURL(rand.IntN(int(len(body))), appConfig.GetConfigURL())
+			vocabulary[string(result)] = string(body)
+			c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+			c.String(http.StatusCreated, string(result))
+			return
+		}
 	}
 }
 
@@ -79,15 +84,17 @@ func ginPostRequestHandler(c *gin.Context) {
 // 	}
 // }
 
-func ginGetRequestHandler(c *gin.Context) {
-	id := c.Request.URL.Path
-	val, ok := vocabulary["http://localhost:8080"+id]
-	if ok {
-		c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-		c.Writer.Header().Set("Location", val)
-		c.String(http.StatusTemporaryRedirect, "")
-	} else {
-		c.String(http.StatusBadRequest, "This URL does not exist in vocabulary.")
+func ginGetRequestHandler(appConfig *config.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Request.URL.Path
+		val, ok := vocabulary[appConfig.GetConfigURL()+strings.TrimPrefix(id, "/")]
+		if ok {
+			c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+			c.Writer.Header().Set("Location", val)
+			c.AbortWithStatus(http.StatusTemporaryRedirect)
+		} else {
+			c.String(http.StatusBadRequest, "This URL does not exist in vocabulary.")
+		}
 	}
 }
 
