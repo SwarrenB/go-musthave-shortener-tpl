@@ -48,7 +48,7 @@ func CreateConfig() *Config {
 func CreateConfigWithFlags() *Config {
 	devConfig := CreateConfig()
 	flag.Var(&devConfig.serverAddress, "a", "server address {host:port}")
-	flag.StringVar(&devConfig.url, "b", "http://localhost:8080/", "URL address http://localhost:8080/{id}")
+	flag.StringVar(&devConfig.url, "b", "", "URL address http://localhost:8080/{id}")
 	flag.Parse()
 	if devConfig.url == "" {
 		devConfig.url = fmt.Sprintf("http://%s/", devConfig.serverAddress.String())
