@@ -50,6 +50,10 @@ func CreateConfigWithFlags() *Config {
 	flag.Var(&devConfig.serverAddress, "a", "server address {host:port}")
 	flag.StringVar(&devConfig.url, "b", "", "URL address http://localhost:8080/{id}")
 	flag.Parse()
+
+	if devConfig.serverAddress.Host == "" || devConfig.serverAddress.Port == "" {
+		devConfig.serverAddress.Set("http://localhost:8080")
+	}
 	if devConfig.url == "" {
 		devConfig.url = fmt.Sprintf("http://%s/", devConfig.serverAddress.String())
 	}
