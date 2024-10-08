@@ -26,7 +26,8 @@ func (s *ServerAddress) Set(value string) error {
 		return fmt.Errorf("need address in a form host:port")
 	}
 	s.Host = hp[0]
-	s.Port = hp[1]
+	port, _ := strings.CutSuffix(hp[1], "/")
+	s.Port = port
 	return nil
 }
 
@@ -52,7 +53,7 @@ func CreateConfigWithFlags() *Config {
 	flag.Parse()
 
 	if devConfig.serverAddress.Host == "" || devConfig.serverAddress.Port == "" {
-		devConfig.serverAddress.Set("http://localhost:8080")
+		devConfig.serverAddress.Set("http://localhost:8080/")
 	}
 	if devConfig.url == "" {
 		devConfig.url = fmt.Sprintf("http://%s/", devConfig.serverAddress.String())
