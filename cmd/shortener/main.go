@@ -89,8 +89,10 @@ func ginGetRequestHandler(appConfig *config.Config) gin.HandlerFunc {
 			c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
 			c.Writer.Header().Set("Location", val)
 			c.AbortWithStatus(http.StatusTemporaryRedirect)
+			return
 		} else {
 			c.String(http.StatusBadRequest, "This URL does not exist in vocabulary.")
+			return
 		}
 	}
 }
