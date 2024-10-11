@@ -44,7 +44,7 @@ func CreateDefaultConfig() *Config {
 }
 
 func CreateGeneralConfig() *Config {
-	devConfig := Config{}
+	devConfig := CreateDefaultConfig()
 	envConfig := Config{}
 	flagsConfig := Config{}
 
@@ -61,17 +61,13 @@ func CreateGeneralConfig() *Config {
 		devConfig.ServerAddress = envConfig.ServerAddress
 	} else if flagsConfig.ServerAddress != "" {
 		devConfig.ServerAddress = flagsConfig.ServerAddress
-	} else {
-		devConfig.ServerAddress = CreateDefaultConfig().ServerAddress
 	}
 
 	if envConfig.ShortURL != "" {
 		devConfig.ShortURL = envConfig.ShortURL
 	} else if flagsConfig.ShortURL != "" {
 		devConfig.ShortURL = flagsConfig.ShortURL
-	} else {
-		devConfig.ShortURL = CreateDefaultConfig().ShortURL
 	}
 
-	return &devConfig
+	return devConfig
 }
