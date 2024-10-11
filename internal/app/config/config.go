@@ -53,7 +53,7 @@ func CreateConfigWithFlags() *Config {
 		devConfig.ServerAddress.Set("http://localhost:8080")
 	}
 	if devConfig.ShortURL == "" {
-		devConfig.ShortURL = fmt.Sprintf("http://%s/", devConfig.ServerAddress.String())
+		devConfig.ShortURL = fmt.Sprintf("http://%s", devConfig.ServerAddress.String())
 	}
 
 	return devConfig
