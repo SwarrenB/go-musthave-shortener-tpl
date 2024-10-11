@@ -4,7 +4,6 @@ import (
 	"io"
 	"math/rand/v2"
 	"net/http"
-	"strings"
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
 	"github.com/gin-gonic/gin"
@@ -12,14 +11,12 @@ import (
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-var vocabulary = make(map[string]string)
-
-func GenerateURL(n int, defaultURL string) []byte {
-	b := defaultURL
+func GenerateURL(n int) string {
+	b := "/"
 	for i := 0; i < n; i++ {
 		b += string(letters[rand.IntN(len(letters))])
 	}
-	return []byte(b)
+	return b
 }
 
 func main() {
@@ -37,7 +34,7 @@ func run() error {
 	// mux.HandleFunc(`/`, postRequestHandler)
 	// mux.HandleFunc(`/:id`, getRequestHandler)
 	// return http.ListenAndServe(`:8080`, mux)
-	http.ListenAndServe(appConfig.ServerAddress.String(), router)
+	router.Run(appConfig.ServerAddress.String())
 	return nil
 }
 
@@ -56,10 +53,10 @@ func ginPostRequestHandler(appConfig *config.Config) gin.HandlerFunc {
 			c.String(http.StatusBadRequest, "URL is invalid.")
 			return
 		} else {
-			result := GenerateURL(rand.IntN(int(len(body))), appConfig.GetConfigURL())
-			vocabulary[string(result)] = string(body)
+			result := GenerateURL(rand.IntN(int(len(body))))
+			appConfig.Vocabulary[string(result)] = string(body)
 			c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-			c.String(http.StatusCreated, string(result))
+			c.String(http.StatusCreated, appConfig.ShortUrl+result)
 			return
 		}
 	}
@@ -87,7 +84,7 @@ func ginPostRequestHandler(appConfig *config.Config) gin.HandlerFunc {
 func ginGetRequestHandler(appConfig *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Request.URL.Path
-		val, ok := vocabulary[appConfig.GetConfigURL()+strings.TrimPrefix(id, "/")]
+		val, ok := appConfig.Vocabulary[id]
 		if ok {
 			c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
 			c.Writer.Header().Set("Location", val)

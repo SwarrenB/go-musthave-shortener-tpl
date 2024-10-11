@@ -14,6 +14,7 @@ import (
 )
 
 func Test_postRequestHandler(t *testing.T) {
+	appConfig := config.CreateConfig()
 	type args struct {
 		code        int
 		contentType string
@@ -27,7 +28,7 @@ func Test_postRequestHandler(t *testing.T) {
 		{
 			name:       "Normal case #1",
 			body:       "https://yandex.practicum.ru",
-			vocabulary: vocabulary,
+			vocabulary: appConfig.Vocabulary,
 			args: args{
 				code:        http.StatusCreated,
 				contentType: "text/plain; charset=UTF-8",
@@ -36,7 +37,7 @@ func Test_postRequestHandler(t *testing.T) {
 		{
 			name:       "Error case #1",
 			body:       "yandex.practicum",
-			vocabulary: vocabulary,
+			vocabulary: appConfig.Vocabulary,
 			args: args{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain; charset=UTF-8",
@@ -44,7 +45,6 @@ func Test_postRequestHandler(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
-	appConfig := config.CreateConfig()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(test.body))
@@ -75,9 +75,9 @@ var testUrls = []string{
 	"https://github.com",
 }
 
-func fillVocabulary(vocabulary map[string]string, defaultURL string) {
+func fillVocabulary(vocabulary map[string]string) {
 	for _, url := range testUrls {
-		vocabulary[string(GenerateURL(len(url), defaultURL))] = url
+		vocabulary[GenerateURL(len(url))] = url
 	}
 }
 
@@ -100,10 +100,10 @@ func Test_getRequestHandler(t *testing.T) {
 		// TODO: Add test cases.
 	}
 	appConfig := config.CreateConfig()
-	fillVocabulary(vocabulary, appConfig.GetConfigURL())
+	fillVocabulary(appConfig.Vocabulary)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			for key, value := range vocabulary {
+			for key, value := range appConfig.Vocabulary {
 				request := httptest.NewRequest(http.MethodGet, key, nil)
 				// создаём новый Recorder
 				w := httptest.NewRecorder()
