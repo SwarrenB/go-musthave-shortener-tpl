@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"math/rand/v2"
 	"net/http"
@@ -28,7 +29,7 @@ func main() {
 func run() error {
 	appConfig := config.CreateConfigWithFlags()
 	router := gin.Default()
-	router.GET("/{id}", ginGetRequestHandler(appConfig))
+	router.GET("/:id", ginGetRequestHandler(appConfig))
 	router.POST("/", ginPostRequestHandler(appConfig))
 	// mux := http.NewServeMux()
 	// mux.HandleFunc(`/`, postRequestHandler)
@@ -53,10 +54,11 @@ func ginPostRequestHandler(appConfig *config.Config) gin.HandlerFunc {
 			c.String(http.StatusBadRequest, "URL is invalid.")
 			return
 		} else {
-			result := GenerateURL(rand.IntN(int(len(body))))
-			appConfig.Vocabulary[string(result)] = string(body)
+			result := GenerateURL(rand.IntN(len(body)))
+			appConfig.Vocabulary[result] = string(body)
 			c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
 			c.String(http.StatusCreated, appConfig.ShortURL+result)
+			fmt.Println(appConfig.Vocabulary)
 			return
 		}
 	}
