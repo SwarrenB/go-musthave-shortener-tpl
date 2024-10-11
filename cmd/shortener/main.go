@@ -38,6 +38,7 @@ func run() error {
 	// mux.HandleFunc(`/:id`, getRequestHandler)
 	// return http.ListenAndServe(`:8080`, mux)
 	router.Run(":8080")
+	http.ListenAndServe(appConfig.ServerAddress.String(), router)
 	return nil
 }
 

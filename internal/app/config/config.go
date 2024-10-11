@@ -12,7 +12,7 @@ type ServerAddress struct {
 }
 
 type Config struct {
-	serverAddress ServerAddress
+	ServerAddress ServerAddress
 	url           string
 }
 
@@ -37,7 +37,7 @@ func (appConfig *Config) GetConfigURL() string {
 
 func CreateConfig() *Config {
 	return &Config{
-		serverAddress: ServerAddress{
+		ServerAddress: ServerAddress{
 			Host: `localhost`,
 			Port: `8080`,
 		},
@@ -48,15 +48,15 @@ func CreateConfig() *Config {
 
 func CreateConfigWithFlags() *Config {
 	devConfig := CreateConfig()
-	flag.Var(&devConfig.serverAddress, "a", "server address {host:port}")
+	flag.Var(&devConfig.ServerAddress, "a", "server address {host:port}")
 	flag.StringVar(&devConfig.url, "b", "", "URL address http://localhost:8080/{id}")
 	flag.Parse()
 
-	if devConfig.serverAddress.Host == "" || devConfig.serverAddress.Port == "" {
-		devConfig.serverAddress.Set("http://localhost:8080/")
+	if devConfig.ServerAddress.Host == "" || devConfig.ServerAddress.Port == "" {
+		devConfig.ServerAddress.Set("http://localhost:8080/")
 	}
 	if devConfig.url == "" {
-		devConfig.url = fmt.Sprintf("http://%s/", devConfig.serverAddress.String())
+		devConfig.url = fmt.Sprintf("http://%s/", devConfig.ServerAddress.String())
 	}
 	if !strings.HasSuffix(devConfig.url, "/") {
 		devConfig.url += "/"
