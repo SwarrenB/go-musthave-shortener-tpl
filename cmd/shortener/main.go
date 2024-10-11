@@ -56,7 +56,7 @@ func ginPostRequestHandler(appConfig *config.Config) gin.HandlerFunc {
 			result := GenerateURL(rand.IntN(int(len(body))))
 			appConfig.Vocabulary[string(result)] = string(body)
 			c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-			c.String(http.StatusCreated, appConfig.ShortUrl+result)
+			c.String(http.StatusCreated, appConfig.ShortURL+result)
 			return
 		}
 	}

@@ -13,7 +13,7 @@ type ServerAddress struct {
 
 type Config struct {
 	ServerAddress ServerAddress
-	ShortUrl      string
+	ShortURL      string
 	Vocabulary    map[string]string
 }
 
@@ -38,7 +38,7 @@ func CreateConfig() *Config {
 			Host: `localhost`,
 			Port: `8080`,
 		},
-		ShortUrl:   `http://localhost:8080/`,
+		ShortURL:   `http://localhost:8080/`,
 		Vocabulary: make(map[string]string),
 	}
 
@@ -47,16 +47,16 @@ func CreateConfig() *Config {
 func CreateConfigWithFlags() *Config {
 	devConfig := CreateConfig()
 	flag.Var(&devConfig.ServerAddress, "a", "server address {host:port}")
-	flag.StringVar(&devConfig.ShortUrl, "b", "", "URL address http://localhost:8080/{id}")
+	flag.StringVar(&devConfig.ShortURL, "b", "", "URL address http://localhost:8080/{id}")
 	flag.Parse()
 
 	if devConfig.ServerAddress.Host == "" || devConfig.ServerAddress.Port == "" {
 		devConfig.ServerAddress.Set("http://localhost:8080/")
 	}
-	if devConfig.ShortUrl == "" {
-		devConfig.ShortUrl = fmt.Sprintf("http://%s/", devConfig.ServerAddress.String())
+	if devConfig.ShortURL == "" {
+		devConfig.ShortURL = fmt.Sprintf("http://%s/", devConfig.ServerAddress.String())
 	}
-	devConfig.ShortUrl, _ = strings.CutSuffix(devConfig.ShortUrl, "/")
+	devConfig.ShortURL, _ = strings.CutSuffix(devConfig.ShortURL, "/")
 
 	return devConfig
 }
