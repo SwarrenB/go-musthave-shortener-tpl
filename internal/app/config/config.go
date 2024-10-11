@@ -3,7 +3,10 @@ package config
 import (
 	"flag"
 	"fmt"
+	"log"
 	"strings"
+
+	"github.com/caarlos0/env/v6"
 )
 
 type ServerAddress struct {
@@ -12,8 +15,8 @@ type ServerAddress struct {
 }
 
 type Config struct {
-	ServerAddress ServerAddress
-	ShortURL      string
+	ServerAddress string `env:"SERVER_ADDRESS"`
+	ShortURL      string `env:"BASE_URL"`
 	Vocabulary    map[string]string
 }
 
@@ -31,30 +34,44 @@ func (s *ServerAddress) Set(value string) error {
 	return nil
 }
 
-func CreateConfig() *Config {
+func CreateDefaultConfig() *Config {
 	return &Config{
-		ServerAddress: ServerAddress{
-			Host: `localhost`,
-			Port: `8080`,
-		},
-		ShortURL:   `http://localhost:8080`,
-		Vocabulary: make(map[string]string),
+		ServerAddress: "localhost:8080",
+		ShortURL:      `http://localhost:8080`,
+		Vocabulary:    make(map[string]string),
 	}
 
 }
 
-func CreateConfigWithFlags() *Config {
-	devConfig := CreateConfig()
-	flag.Var(&devConfig.ServerAddress, "a", "server address {host:port}")
-	flag.StringVar(&devConfig.ShortURL, "b", "", "URL address http://localhost:8080/{id}")
+func CreateGeneralConfig() *Config {
+	devConfig := Config{}
+	envConfig := Config{}
+	flagsConfig := Config{}
+
+	err := env.Parse(&envConfig)
+	if err != nil {
+		log.Fatal("Unable to parse environment config.")
+	}
+
+	flag.StringVar(&flagsConfig.ServerAddress, "a", "", "server address {host:port}")
+	flag.StringVar(&flagsConfig.ShortURL, "b", "", "URL address http://localhost:8080/{id}")
 	flag.Parse()
 
-	if devConfig.ServerAddress.Host == "" || devConfig.ServerAddress.Port == "" {
-		devConfig.ServerAddress.Set("http://localhost:8080")
-	}
-	if devConfig.ShortURL == "" {
-		devConfig.ShortURL = fmt.Sprintf("http://%s", devConfig.ServerAddress.String())
+	if envConfig.ServerAddress != "" {
+		devConfig.ServerAddress = envConfig.ServerAddress
+	} else if flagsConfig.ServerAddress != "" {
+		devConfig.ServerAddress = flagsConfig.ServerAddress
+	} else {
+		devConfig.ServerAddress = CreateDefaultConfig().ServerAddress
 	}
 
-	return devConfig
+	if envConfig.ShortURL != "" {
+		devConfig.ShortURL = envConfig.ShortURL
+	} else if flagsConfig.ShortURL != "" {
+		devConfig.ShortURL = flagsConfig.ShortURL
+	} else {
+		devConfig.ShortURL = CreateDefaultConfig().ShortURL
+	}
+
+	return &devConfig
 }

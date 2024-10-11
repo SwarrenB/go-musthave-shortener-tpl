@@ -14,7 +14,7 @@ import (
 )
 
 func Test_postRequestHandler(t *testing.T) {
-	appConfig := config.CreateConfig()
+	appConfig := config.CreateDefaultConfig()
 	type args struct {
 		code        int
 		contentType string
@@ -99,7 +99,7 @@ func Test_getRequestHandler(t *testing.T) {
 		},
 		// TODO: Add test cases.
 	}
-	appConfig := config.CreateConfig()
+	appConfig := config.CreateDefaultConfig()
 	fillVocabulary(appConfig.Vocabulary)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

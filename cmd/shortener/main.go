@@ -30,7 +30,7 @@ func main() {
 }
 
 func run() error {
-	appConfig := config.CreateConfigWithFlags()
+	appConfig := config.CreateGeneralConfig()
 	router := gin.Default()
 	router.GET("/:id", ginGetRequestHandler(appConfig))
 	router.POST("/", ginPostRequestHandler(appConfig))
@@ -38,7 +38,7 @@ func run() error {
 	// mux.HandleFunc(`/`, postRequestHandler)
 	// mux.HandleFunc(`/:id`, getRequestHandler)
 	// return http.ListenAndServe(`:8080`, mux)
-	router.Run(appConfig.ServerAddress.String())
+	router.Run(appConfig.ServerAddress)
 	return nil
 }
 
