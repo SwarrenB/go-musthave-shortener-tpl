@@ -26,11 +26,6 @@ func (s *ShortenerService) AddingURL(originalURL string) (string, error) {
 	var shortURL string
 	var err error
 	shortURL = s.urlGenerator.GenerateURL(originalURL)
-	_, err = s.repo.GetURL(shortURL)
-
-	if err == nil {
-		return "", err
-	}
 
 	err = s.repo.AddURL(shortURL, originalURL)
 

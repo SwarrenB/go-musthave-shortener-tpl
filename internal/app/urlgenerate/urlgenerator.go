@@ -19,12 +19,12 @@ func CreateURLGenerator() *URLGeneratorImpl {
 }
 
 func (g *URLGeneratorImpl) GenerateURL(originalURL string) string {
-	newUrlLength := rand.IntN(len(originalURL))
-	for newUrlLength != 0 {
-		newUrlLength = rand.IntN(len(originalURL))
+	newURLLength := rand.IntN(len(originalURL))
+	for newURLLength != 0 {
+		newURLLength = rand.IntN(len(originalURL))
 	}
 	b := "/"
-	for i := 0; i < newUrlLength; i++ {
+	for i := 0; i < newURLLength; i++ {
 		b += string(utils.Symbols[rand.IntN(len(utils.Symbols))])
 	}
 	return b
