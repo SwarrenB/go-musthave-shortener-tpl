@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"io"
@@ -8,36 +8,36 @@ import (
 	"testing"
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_postRequestHandler(t *testing.T) {
+func Test_ginPostRequestHandler(t *testing.T) {
 	appConfig := config.CreateDefaultConfig()
+	service := service.CreateShortenerService()
+	handler := CreateGinHandler(service, *appConfig)
 	type args struct {
 		code        int
 		contentType string
 	}
 	tests := []struct {
-		name       string
-		body       string
-		vocabulary map[string]string
-		args       args
+		name string
+		body string
+		args args
 	}{
 		{
-			name:       "Normal case #1",
-			body:       "https://yandex.practicum.ru",
-			vocabulary: appConfig.Vocabulary,
+			name: "Normal case #1",
+			body: "https://yandex.practicum.ru",
 			args: args{
 				code:        http.StatusCreated,
 				contentType: "text/plain; charset=UTF-8",
 			},
 		},
 		{
-			name:       "Error case #1",
-			body:       "yandex.practicum",
-			vocabulary: appConfig.Vocabulary,
+			name: "Error case #1",
+			body: "yandex.practicum",
 			args: args{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain; charset=UTF-8",
@@ -53,8 +53,8 @@ func Test_postRequestHandler(t *testing.T) {
 			// postRequestHandler(w, request)
 			c, _ := gin.CreateTestContext(w)
 			c.Request = request
-			handler := ginPostRequestHandler(appConfig)
-			handler(c)
+			h := handler.GinPostRequestHandler()
+			h(c)
 			res := w.Result()
 			// проверяем код ответа
 			assert.Equal(t, test.args.code, res.StatusCode)
@@ -68,20 +68,7 @@ func Test_postRequestHandler(t *testing.T) {
 	}
 }
 
-var testUrls = []string{
-	"http://practictum.yandex.ru",
-	"http://vk.com",
-	"https://yandex.ru",
-	"https://github.com",
-}
-
-func fillVocabulary(vocabulary map[string]string) {
-	for _, url := range testUrls {
-		vocabulary[GenerateURL(len(url))] = url
-	}
-}
-
-func Test_getRequestHandler(t *testing.T) {
+func Test_ginGetRequestHandler(t *testing.T) {
 	type args struct {
 		code        int
 		contentType string
@@ -100,27 +87,28 @@ func Test_getRequestHandler(t *testing.T) {
 		// TODO: Add test cases.
 	}
 	appConfig := config.CreateDefaultConfig()
-	fillVocabulary(appConfig.Vocabulary)
+	service := service.CreateShortenerService()
+	handler := CreateGinHandler(service, *appConfig)
+	originalURL := "http://practictum.yandex.ru"
+	shortURL, _ := handler.service.AddingURL(originalURL)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			for key, value := range appConfig.Vocabulary {
-				request := httptest.NewRequest(http.MethodGet, key, nil)
-				// создаём новый Recorder
-				w := httptest.NewRecorder()
-				// getRequestHandler(w, request)
-				c, _ := gin.CreateTestContext(w)
-				c.Request = request
-				handler := ginGetRequestHandler(appConfig)
-				handler(c)
-				res := w.Result()
-				// проверяем код ответа
-				assert.Equal(t, test.args.code, res.StatusCode)
+			request := httptest.NewRequest(http.MethodGet, shortURL, nil)
+			// создаём новый Recorder
+			w := httptest.NewRecorder()
+			// getRequestHandler(w, request)
+			c, _ := gin.CreateTestContext(w)
+			c.Request = request
+			h := handler.GinGetRequestHandler()
+			h(c)
+			res := w.Result()
+			// проверяем код ответа
+			assert.Equal(t, test.args.code, res.StatusCode)
 
-				defer res.Body.Close()
+			defer res.Body.Close()
 
-				assert.Equal(t, value, res.Header.Get("Location"))
-				assert.Equal(t, strings.ToLower(test.args.contentType), strings.ToLower(res.Header.Get("Content-Type")))
-			}
+			assert.Equal(t, originalURL, res.Header.Get("Location"))
+			assert.Equal(t, strings.ToLower(test.args.contentType), strings.ToLower(res.Header.Get("Content-Type")))
 		})
 	}
 }

@@ -17,7 +17,6 @@ type ServerAddress struct {
 type Config struct {
 	ServerAddress string `env:"SERVER_ADDRESS"`
 	ShortURL      string `env:"BASE_URL"`
-	Vocabulary    map[string]string
 }
 
 func (s ServerAddress) String() string {
@@ -38,7 +37,6 @@ func CreateDefaultConfig() *Config {
 	return &Config{
 		ServerAddress: "localhost:8080",
 		ShortURL:      `http://localhost:8080`,
-		Vocabulary:    make(map[string]string),
 	}
 
 }
