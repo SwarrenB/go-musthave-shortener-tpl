@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
@@ -26,7 +25,6 @@ func CreateGinHandler(service service.ServiceImpl, config config.Config) *GinHan
 func (handler *GinHandler) GinPostRequestHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		body, err := io.ReadAll(c.Request.Body)
-		fmt.Printf("body ===" + string(body))
 		isURL := string(body[0:4]) == "http"
 		if err != nil || !isURL {
 			c.String(http.StatusBadRequest, "URL is invalid.")
