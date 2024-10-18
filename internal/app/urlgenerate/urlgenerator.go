@@ -20,7 +20,7 @@ func CreateURLGenerator() *URLGeneratorImpl {
 
 func (g *URLGeneratorImpl) GenerateURL(originalURL string) string {
 	newURLLength := rand.IntN(len(originalURL))
-	for newURLLength != 0 {
+	if newURLLength == 0 {
 		newURLLength = rand.IntN(len(originalURL))
 	}
 	b := "/"
