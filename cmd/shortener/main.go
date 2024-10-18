@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/handlers"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
@@ -9,7 +12,8 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		panic(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 }
 
