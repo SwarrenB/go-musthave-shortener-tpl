@@ -6,7 +6,6 @@ import (
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/urlgenerate"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,10 +29,13 @@ func (handler *GinHandler) GinPostRequestHandler() gin.HandlerFunc {
 			c.String(http.StatusBadRequest, "URL is invalid.")
 			return
 		} else {
-			result := urlgenerate.CreateURLGenerator().GenerateURL(string(body))
-			handler.service.AddingURL(result)
+			shortURL, err := handler.service.AddingURL(string(body))
+			if err != nil {
+				c.String(http.StatusBadRequest, err.Error())
+				return
+			}
 			c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-			c.String(http.StatusCreated, handler.config.ShortURL+result)
+			c.String(http.StatusCreated, handler.config.ShortURL+shortURL)
 			return
 		}
 	}
