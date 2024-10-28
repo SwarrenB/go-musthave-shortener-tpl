@@ -25,6 +25,7 @@ func run() error {
 	handler := handlers.CreateGinHandler(service, *appConfig)
 	router.Use(middleware.WithLogging)
 	router.GET("/:id", handler.GinGetRequestHandler())
+	router.POST("/api/shorten", handler.HandlePostJSON())
 	router.POST("/", handler.GinPostRequestHandler())
 	router.Run(appConfig.ServerAddress)
 	return nil

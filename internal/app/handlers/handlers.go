@@ -5,8 +5,10 @@ import (
 	"net/http"
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/marshal"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
 	"github.com/gin-gonic/gin"
+	"github.com/mailru/easyjson"
 )
 
 type GinHandler struct {
@@ -54,5 +56,32 @@ func (handler *GinHandler) GinGetRequestHandler() gin.HandlerFunc {
 			c.String(http.StatusBadRequest, "This URL does not exist in vocabulary.")
 			return
 		}
+	}
+}
+
+func (handler *GinHandler) HandlePostJSON() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		urlRequest := marshal.URLRequest{}
+
+		if err := easyjson.UnmarshalFromReader(c.Request.Body, &urlRequest); err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		shortURL, err := handler.service.AddingURL(urlRequest.OriginalURL)
+		if err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.Writer.Header().Set("Content-Type", "application/json")
+		c.Status(http.StatusCreated)
+
+		urlResponse := marshal.URLResponse{ShortURL: handler.config.ShortURL + shortURL}
+
+		if _, err = easyjson.MarshalToWriter(&urlResponse, c.Writer); err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		return
 	}
 }
