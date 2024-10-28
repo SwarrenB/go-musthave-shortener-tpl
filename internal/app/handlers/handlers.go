@@ -82,6 +82,5 @@ func (handler *GinHandler) HandlePostJSON() gin.HandlerFunc {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		return
 	}
 }
