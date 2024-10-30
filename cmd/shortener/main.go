@@ -9,6 +9,7 @@ import (
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/middleware"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
 	"github.com/gin-gonic/gin"
+	compress "github.com/lf4096/gin-compress"
 )
 
 func main() {
@@ -24,6 +25,8 @@ func run() error {
 	router := gin.Default()
 	handler := handlers.CreateGinHandler(service, *appConfig)
 	router.Use(middleware.WithLogging)
+	router.Use(compress.Compress())
+	router.Use(middleware.Decompress())
 	router.GET("/:id", handler.GinGetRequestHandler())
 	router.POST("/api/shorten", handler.HandlePostJSON())
 	router.POST("/", handler.GinPostRequestHandler())
