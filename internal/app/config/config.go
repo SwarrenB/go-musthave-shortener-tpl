@@ -15,8 +15,9 @@ type ServerAddress struct {
 }
 
 type Config struct {
-	ServerAddress string `env:"SERVER_ADDRESS"`
-	ShortURL      string `env:"BASE_URL"`
+	ServerAddress   string `env:"SERVER_ADDRESS"`
+	ShortURL        string `env:"BASE_URL"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 }
 
 func (s ServerAddress) String() string {
@@ -35,8 +36,9 @@ func (s *ServerAddress) Set(value string) error {
 
 func CreateDefaultConfig() *Config {
 	return &Config{
-		ServerAddress: "localhost:8080",
-		ShortURL:      `http://localhost:8080`,
+		ServerAddress:   "localhost:8080",
+		ShortURL:        `http://localhost:8080`,
+		FileStoragePath: `repo/default_repo.json`,
 	}
 
 }
@@ -53,6 +55,7 @@ func CreateGeneralConfig() *Config {
 
 	flag.StringVar(&flagsConfig.ServerAddress, "a", "", "server address {host:port}")
 	flag.StringVar(&flagsConfig.ShortURL, "b", "", "URL address http://localhost:8080/{id}")
+	flag.StringVar(&flagsConfig.FileStoragePath, "f", "", "url storage file path")
 	flag.Parse()
 
 	if envConfig.ServerAddress != "" {
@@ -65,6 +68,12 @@ func CreateGeneralConfig() *Config {
 		devConfig.ShortURL = envConfig.ShortURL
 	} else if flagsConfig.ShortURL != "" {
 		devConfig.ShortURL = flagsConfig.ShortURL
+	}
+
+	if envConfig.FileStoragePath != "" {
+		devConfig.FileStoragePath = envConfig.FileStoragePath
+	} else if flagsConfig.FileStoragePath != "" {
+		devConfig.FileStoragePath = flagsConfig.FileStoragePath
 	}
 
 	return devConfig

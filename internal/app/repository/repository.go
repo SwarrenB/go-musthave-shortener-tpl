@@ -8,6 +8,9 @@ import (
 type URLRepository interface {
 	AddURL(shortURL string, originalURL string) error
 	GetURL(shortURL string) (string, error)
+
+	CreateURLRepository() (*URLRepositoryState, error)
+	RestoreURLRepository(m *URLRepositoryState) error
 }
 
 type URLRepositoryImpl struct {
@@ -43,4 +46,19 @@ func (ms *URLRepositoryImpl) GetURL(shortURL string) (string, error) {
 
 	}
 	return value, nil
+}
+
+func (ms *URLRepositoryImpl) CreateMemento() (*URLRepositoryState, error) {
+	ms.Lock()
+	defer ms.Unlock()
+
+	return CreateURLRepositoryState(ms.values), nil
+}
+
+func (ms *URLRepositoryImpl) RestoreMemento(m *URLRepositoryState) error {
+	ms.Lock()
+	defer ms.Unlock()
+	ms.values = m.GetURLRepositoryState()
+
+	return nil
 }
