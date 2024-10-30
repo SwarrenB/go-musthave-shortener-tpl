@@ -48,14 +48,14 @@ func (ms *URLRepositoryImpl) GetURL(shortURL string) (string, error) {
 	return value, nil
 }
 
-func (ms *URLRepositoryImpl) CreateMemento() (*URLRepositoryState, error) {
+func (ms *URLRepositoryImpl) CreateURLRepository() (*URLRepositoryState, error) {
 	ms.Lock()
 	defer ms.Unlock()
 
 	return CreateURLRepositoryState(ms.values), nil
 }
 
-func (ms *URLRepositoryImpl) RestoreMemento(m *URLRepositoryState) error {
+func (ms *URLRepositoryImpl) RestoreURLRepository(m *URLRepositoryState) error {
 	ms.Lock()
 	defer ms.Unlock()
 	ms.values = m.GetURLRepositoryState()
