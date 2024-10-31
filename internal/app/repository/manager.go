@@ -151,12 +151,12 @@ func (FileWriter *FileWriter) SaveState(state *URLRepositoryState) error {
 	return nil
 }
 
-func (r *FileReader) Reset() error {
-	if _, err := r.file.Seek(0, io.SeekStart); err != nil {
-		return fmt.Errorf("file reader reset: %w", r.scanner.Err())
+func (reader *FileReader) Reset() error {
+	if _, err := reader.file.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("file reader reset: %w", reader.scanner.Err())
 	}
 
-	r.scanner = bufio.NewScanner(r.file)
+	reader.scanner = bufio.NewScanner(reader.file)
 
 	return nil
 }

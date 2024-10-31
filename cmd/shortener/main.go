@@ -17,6 +17,7 @@ import (
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
 	"github.com/gin-gonic/gin"
 	compress "github.com/lf4096/gin-compress"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -40,6 +41,11 @@ func run() error {
 	router.POST("/api/shorten", handler.HandlePostJSON())
 	router.POST("/", handler.GinPostRequestHandler())
 
+	server := &http.Server{
+		Addr:    appConfig.ServerAddress,
+		Handler: router.Handler(),
+	}
+
 	repoState, err := stateManager.LoadFromFile()
 	if err != nil {
 		logger.Log.Error("create repository state error")
@@ -48,11 +54,6 @@ func run() error {
 		if err != nil {
 			logger.Log.Error("restore repository state error")
 		}
-	}
-
-	server := &http.Server{
-		Addr:    appConfig.ServerAddress,
-		Handler: router.Handler(),
 	}
 
 	stopChan := make(chan os.Signal, 1)
@@ -70,13 +71,14 @@ func run() error {
 	<-stopChan
 	logger.Log.Info("Shutdown signal received")
 
+	logger.Log.Info("Repository", zap.Int("repo", len(repoState.GetURLRepositoryState())))
+
 	repoState, err = repo.CreateURLRepository()
 	if err != nil {
 		logger.Log.Error("create repository state error")
 	} else {
-		err := repo.RestoreURLRepository(repoState)
-		if err != nil {
-			logger.Log.Error("restore repository state error")
+		if err := stateManager.SaveToFile(repoState); err != nil {
+			logger.Log.Error("failed to store state to file", zap.String("file_storage_path", appConfig.FileStoragePath))
 		}
 	}
 
