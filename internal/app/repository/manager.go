@@ -80,7 +80,7 @@ func NewReader(fileName string, log zap.Logger) (*FileReader, error) {
 func (reader *FileReader) LoadState() (*URLRepositoryState, error) {
 	state := make(map[string]string)
 
-	if _, err := reader.file.Seek(0, io.SeekStart); err != nil {
+	if err := reader.Reset(); err != nil {
 		return nil, err
 	}
 	reader.scanner = bufio.NewScanner(reader.file)
@@ -98,7 +98,7 @@ func (reader *FileReader) LoadState() (*URLRepositoryState, error) {
 		reader.log.Info("record loaded",
 			zap.Int("uuid", record.ID),
 			zap.String("short_url", record.ShortURL),
-			zap.String("long_url", record.OriginalURL))
+			zap.String("original_url", record.OriginalURL))
 	}
 
 	if reader.scanner.Err() == nil {
@@ -147,6 +147,16 @@ func (FileWriter *FileWriter) SaveState(state *URLRepositoryState) error {
 
 		index++
 	}
+
+	return nil
+}
+
+func (r *FileReader) Reset() error {
+	if _, err := r.file.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("file reader reset: %w", r.scanner.Err())
+	}
+
+	r.scanner = bufio.NewScanner(r.file)
 
 	return nil
 }

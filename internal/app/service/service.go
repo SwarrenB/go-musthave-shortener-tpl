@@ -38,11 +38,11 @@ func (s *ShortenerService) AddingURL(originalURL string) (string, error) {
 
 func (s *ShortenerService) GetOriginalURL(shortURL string) (string, error) {
 
-	longURL, err := s.repo.GetURL(shortURL)
+	originalURL, err := s.repo.GetURL(shortURL)
 
 	if err != nil {
 		return "", err
 	}
 
-	return longURL, nil
+	return originalURL, nil
 }
