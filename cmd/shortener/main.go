@@ -15,6 +15,7 @@ import (
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/middleware"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/urlgenerate"
 	"github.com/gin-gonic/gin"
 	compress "github.com/lf4096/gin-compress"
 	"go.uber.org/zap"
@@ -29,8 +30,9 @@ func main() {
 func run() error {
 	logger.Initialize("Info")
 	appConfig := config.CreateGeneralConfig()
-	service := service.CreateShortenerService()
 	repo := repository.CreateInMemoryURLRepository()
+	generator := urlgenerate.CreateURLGenerator()
+	service := service.CreateShortenerService(repo, generator, appConfig)
 	stateManager := repository.CreateStateManager(appConfig, *logger.Log)
 	router := gin.Default()
 	handler := handlers.CreateGinHandler(service, *appConfig)
@@ -54,10 +56,6 @@ func run() error {
 		if err != nil {
 			logger.Log.Error("restore repository state error")
 		}
-	}
-
-	for k, v := range repoState.GetURLRepositoryState() {
-		logger.Log.Info("state to load", zap.String("shortUrl", k), zap.String("origUrl", v))
 	}
 
 	stopChan := make(chan os.Signal, 1)

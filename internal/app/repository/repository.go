@@ -15,7 +15,6 @@ type URLRepository interface {
 
 type URLRepositoryImpl struct {
 	sync.RWMutex
-	URLRepository
 	values map[string]string
 }
 
