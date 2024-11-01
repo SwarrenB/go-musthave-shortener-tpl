@@ -56,6 +56,10 @@ func run() error {
 		}
 	}
 
+	for k, v := range repoState.GetURLRepositoryState() {
+		logger.Log.Info("state to load", zap.String("shortUrl", k), zap.String("origUrl", v))
+	}
+
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
 
