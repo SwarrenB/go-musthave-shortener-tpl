@@ -71,6 +71,7 @@ func run() error {
 		}
 	}()
 	logger.Log.Info("Server started")
+	logger.Log.Info("Repo after server started", zap.Any("repo", repo))
 
 	<-stopChan
 	logger.Log.Info("Shutdown signal received")
