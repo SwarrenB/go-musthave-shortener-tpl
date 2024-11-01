@@ -43,7 +43,7 @@ func run() error {
 
 	server := http.Server{
 		Addr:    appConfig.ServerAddress,
-		Handler: router.Handler(),
+		Handler: router,
 	}
 
 	repoState, err := stateManager.LoadFromFile()
