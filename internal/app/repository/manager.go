@@ -35,7 +35,7 @@ func CreateStateManager(config *config.Config, log zap.Logger) *StateManager {
 }
 
 func (sm *StateManager) LoadFromFile() (*URLRepositoryState, error) {
-	reader, err := NewReader(sm.config.FileStoragePath, sm.log)
+	reader, err := CreateReader(sm.config.FileStoragePath, sm.log)
 	if err != nil {
 		return nil, err
 	}
@@ -50,13 +50,13 @@ func (sm *StateManager) LoadFromFile() (*URLRepositoryState, error) {
 }
 
 func (sm *StateManager) SaveToFile(state *URLRepositoryState) error {
-	FileWriter, err := CreateWriter(sm.config.FileStoragePath, sm.log)
+	writer, err := CreateWriter(sm.config.FileStoragePath, sm.log)
 	if err != nil {
 		return err
 	}
-	defer FileWriter.file.Close()
+	defer writer.file.Close()
 
-	err = FileWriter.SaveState(state)
+	err = writer.SaveState(state)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (sm *StateManager) SaveToFile(state *URLRepositoryState) error {
 	return nil
 }
 
-func NewReader(fileName string, log zap.Logger) (*FileReader, error) {
+func CreateReader(fileName string, log zap.Logger) (*FileReader, error) {
 	file, err := os.OpenFile(fileName, os.O_RDONLY|os.O_CREATE, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("open %v error: %s", fileName, err)
@@ -83,7 +83,6 @@ func (reader *FileReader) LoadState() (*URLRepositoryState, error) {
 	if err := reader.Reset(); err != nil {
 		return nil, err
 	}
-	reader.scanner = bufio.NewScanner(reader.file)
 
 	for reader.scanner.Scan() {
 		data := reader.scanner.Bytes()
@@ -120,7 +119,7 @@ func CreateWriter(fileName string, log zap.Logger) (*FileWriter, error) {
 	}, nil
 }
 
-func (FileWriter *FileWriter) SaveState(state *URLRepositoryState) error {
+func (writer *FileWriter) SaveState(state *URLRepositoryState) error {
 	urls := state.GetURLRepositoryState()
 
 	index := 1
@@ -131,15 +130,15 @@ func (FileWriter *FileWriter) SaveState(state *URLRepositoryState) error {
 			OriginalURL: OriginalURL,
 		}
 
-		if _, err := easyjson.MarshalToWriter(record, FileWriter.file); err != nil {
+		if _, err := easyjson.MarshalToWriter(record, writer.file); err != nil {
 			return fmt.Errorf("marshalling error: %s", err)
 		}
 
-		if _, err := FileWriter.file.WriteString("\n"); err != nil {
+		if _, err := writer.file.WriteString("\n"); err != nil {
 			return fmt.Errorf("write file error: %s", err)
 		}
 
-		FileWriter.log.Info("record preserved",
+		writer.log.Info("record preserved",
 			zap.Int("uuid", record.ID),
 			zap.String("short_url", record.ShortURL),
 			zap.String("original_url", record.OriginalURL),
