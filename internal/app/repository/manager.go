@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/logger"
 	easyjson "github.com/mailru/easyjson"
 	"go.uber.org/zap"
 )
@@ -55,7 +56,9 @@ func (sm *StateManager) SaveToFile(state *URLRepositoryState) error {
 		return err
 	}
 	defer writer.Close()
-
+	for k, v := range state.state {
+		logger.Log.Info("state to save", zap.String("shortUrl", k), zap.String("origUrl", v))
+	}
 	err = writer.SaveState(state)
 	if err != nil {
 		return err
@@ -123,11 +126,11 @@ func (writer *FileWriter) SaveState(state *URLRepositoryState) error {
 	urls := state.GetURLRepositoryState()
 
 	index := 1
-	for shortURL, OriginalURL := range urls {
+	for shortURL, originalURL := range urls {
 		record := &FileRecord{
 			ID:          index,
 			ShortURL:    shortURL,
-			OriginalURL: OriginalURL,
+			OriginalURL: originalURL,
 		}
 
 		if _, err := easyjson.MarshalToWriter(record, writer.file); err != nil {
