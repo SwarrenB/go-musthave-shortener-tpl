@@ -50,7 +50,7 @@ func (sm *StateManager) LoadFromFile() (*URLRepositoryState, error) {
 }
 
 func (sm *StateManager) SaveToFile(state *URLRepositoryState) error {
-	FileWriter, err := NewWriter(sm.config.FileStoragePath, sm.log)
+	FileWriter, err := CreateWriter(sm.config.FileStoragePath, sm.log)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (reader *FileReader) LoadState() (*URLRepositoryState, error) {
 	return nil, fmt.Errorf("error reading file: %s", reader.scanner.Err())
 }
 
-func NewWriter(fileName string, log zap.Logger) (*FileWriter, error) {
+func CreateWriter(fileName string, log zap.Logger) (*FileWriter, error) {
 	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("error opening %v: %s", fileName, err)

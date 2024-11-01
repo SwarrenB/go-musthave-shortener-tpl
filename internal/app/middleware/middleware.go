@@ -46,5 +46,6 @@ func WithLogging(c *gin.Context) {
 		zap.Int("status", c.Writer.Status()),
 		zap.Duration("duration", duration),
 		zap.Int("size", c.Writer.Size()),
+		zap.String("location", c.Writer.Header().Get("Location")),
 	)
 }

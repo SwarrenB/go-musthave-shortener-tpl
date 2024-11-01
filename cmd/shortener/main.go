@@ -41,7 +41,7 @@ func run() error {
 	router.POST("/api/shorten", handler.HandlePostJSON())
 	router.POST("/", handler.GinPostRequestHandler())
 
-	server := &http.Server{
+	server := http.Server{
 		Addr:    appConfig.ServerAddress,
 		Handler: router.Handler(),
 	}
@@ -70,8 +70,6 @@ func run() error {
 
 	<-stopChan
 	logger.Log.Info("Shutdown signal received")
-
-	logger.Log.Info("Repository", zap.Int("repo", len(repoState.GetURLRepositoryState())))
 
 	repoState, err = repo.CreateURLRepository()
 	if err != nil {
