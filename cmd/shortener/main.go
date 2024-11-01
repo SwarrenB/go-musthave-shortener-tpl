@@ -71,9 +71,9 @@ func run() error {
 		}
 	}()
 	logger.Log.Info("Server started")
-	logger.Log.Info("Repo after server started", zap.Any("repo", repo))
 
 	<-stopChan
+	logger.Log.Info("Repo after server started", zap.Any("repo", repo))
 	logger.Log.Info("Shutdown signal received")
 
 	repoState, err = repo.CreateURLRepository()
