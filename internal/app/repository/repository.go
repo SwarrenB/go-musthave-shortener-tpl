@@ -21,7 +21,8 @@ type URLRepositoryImpl struct {
 
 func CreateInMemoryURLRepository() *URLRepositoryImpl {
 	return &URLRepositoryImpl{
-		values: map[string]string{},
+		RWMutex: sync.RWMutex{},
+		values:  map[string]string{},
 	}
 }
 
@@ -67,7 +68,12 @@ func (ms *URLRepositoryImpl) CreateURLRepository() (*URLRepositoryState, error) 
 func (ms *URLRepositoryImpl) RestoreURLRepository(m *URLRepositoryState) error {
 	ms.Lock()
 	defer ms.Unlock()
-	ms.values = m.GetURLRepositoryState()
 
+	copy := make(map[string]string)
+	for k, v := range m.GetURLRepositoryState() {
+		copy[k] = v
+	}
+
+	ms.values = copy
 	return nil
 }
