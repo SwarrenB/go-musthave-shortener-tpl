@@ -38,7 +38,7 @@ func CreateDefaultConfig() *Config {
 	return &Config{
 		ServerAddress:   "localhost:8080",
 		ShortURL:        `http://localhost:8080`,
-		FileStoragePath: `repo/default_repo.json`,
+		FileStoragePath: `default_repo.json`,
 	}
 
 }
