@@ -117,7 +117,7 @@ func Test_ginGetRequestHandler(t *testing.T) {
 func TestGinHandler_HandlePostJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		handler *GinHandler
+		handler *Handler
 		want    gin.HandlerFunc
 	}{
 		// TODO: Add test cases.

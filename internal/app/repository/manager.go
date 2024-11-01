@@ -39,7 +39,7 @@ func (sm *StateManager) LoadFromFile() (*URLRepositoryState, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer reader.file.Close()
+	defer reader.Close()
 
 	state, err := reader.LoadState()
 	if err != nil {
@@ -54,7 +54,7 @@ func (sm *StateManager) SaveToFile(state *URLRepositoryState) error {
 	if err != nil {
 		return err
 	}
-	defer writer.file.Close()
+	defer writer.Close()
 
 	err = writer.SaveState(state)
 	if err != nil {
@@ -156,6 +156,24 @@ func (reader *FileReader) Reset() error {
 	}
 
 	reader.scanner = bufio.NewScanner(reader.file)
+
+	return nil
+}
+
+func (reader *FileReader) Close() error {
+	err := reader.file.Close()
+	if err != nil {
+		return fmt.Errorf("error closing the file: %s", err)
+	}
+
+	return nil
+}
+
+func (writer *FileWriter) Close() error {
+	err := writer.file.Close()
+	if err != nil {
+		return fmt.Errorf("error closing the file: %s", err)
+	}
 
 	return nil
 }

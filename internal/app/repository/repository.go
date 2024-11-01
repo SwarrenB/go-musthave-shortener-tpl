@@ -48,11 +48,20 @@ func (ms *URLRepositoryImpl) GetURL(shortURL string) (string, error) {
 	return value, nil
 }
 
+func (ms *URLRepositoryImpl) deepCopyValues() map[string]string {
+	copy := make(map[string]string)
+	for k, v := range ms.values {
+		copy[k] = v
+	}
+
+	return copy
+}
+
 func (ms *URLRepositoryImpl) CreateURLRepository() (*URLRepositoryState, error) {
 	ms.Lock()
 	defer ms.Unlock()
 
-	return CreateURLRepositoryState(ms.values), nil
+	return CreateURLRepositoryState(ms.deepCopyValues()), nil
 }
 
 func (ms *URLRepositoryImpl) RestoreURLRepository(m *URLRepositoryState) error {
