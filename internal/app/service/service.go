@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/urlgenerate"
 )
@@ -13,12 +14,18 @@ type ServiceImpl interface {
 type ShortenerService struct {
 	repo         repository.URLRepository
 	urlGenerator urlgenerate.URLGenerator
+	config       *config.Config
 }
 
-func CreateShortenerService() *ShortenerService {
+func CreateShortenerService(
+	repo repository.URLRepository,
+	gen urlgenerate.URLGenerator,
+	config *config.Config,
+) *ShortenerService {
 	return &ShortenerService{
-		repo:         repository.CreateInMemoryURLRepository(),
-		urlGenerator: urlgenerate.CreateURLGenerator(),
+		repo:         repo,
+		urlGenerator: gen,
+		config:       config,
 	}
 }
 
@@ -38,11 +45,11 @@ func (s *ShortenerService) AddingURL(originalURL string) (string, error) {
 
 func (s *ShortenerService) GetOriginalURL(shortURL string) (string, error) {
 
-	longURL, err := s.repo.GetURL(shortURL)
+	originalURL, err := s.repo.GetURL(shortURL)
 
 	if err != nil {
 		return "", err
 	}
 
-	return longURL, nil
+	return originalURL, nil
 }

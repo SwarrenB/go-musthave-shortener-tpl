@@ -4,11 +4,14 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/urlgenerate"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +19,9 @@ import (
 
 func Test_ginPostRequestHandler(t *testing.T) {
 	appConfig := config.CreateDefaultConfig()
-	service := service.CreateShortenerService()
+	repo := repository.CreateInMemoryURLRepository()
+	generator := urlgenerate.CreateURLGenerator()
+	service := service.CreateShortenerService(repo, generator, appConfig)
 	handler := CreateGinHandler(service, *appConfig)
 	type args struct {
 		code        int
@@ -87,7 +92,9 @@ func Test_ginGetRequestHandler(t *testing.T) {
 		// TODO: Add test cases.
 	}
 	appConfig := config.CreateDefaultConfig()
-	service := service.CreateShortenerService()
+	repo := repository.CreateInMemoryURLRepository()
+	generator := urlgenerate.CreateURLGenerator()
+	service := service.CreateShortenerService(repo, generator, appConfig)
 	handler := CreateGinHandler(service, *appConfig)
 	originalURL := "http://practictum.yandex.ru"
 	shortURL, _ := handler.service.AddingURL(originalURL)
@@ -109,6 +116,23 @@ func Test_ginGetRequestHandler(t *testing.T) {
 
 			assert.Equal(t, originalURL, res.Header.Get("Location"))
 			assert.Equal(t, strings.ToLower(test.args.contentType), strings.ToLower(res.Header.Get("Content-Type")))
+		})
+	}
+}
+
+func TestGinHandler_HandlePostJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		handler *Handler
+		want    gin.HandlerFunc
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.handler.HandlePostJSON(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GinHandler.HandlePostJSON() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

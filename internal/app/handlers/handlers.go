@@ -5,23 +5,25 @@ import (
 	"net/http"
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/marshal"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
 	"github.com/gin-gonic/gin"
+	"github.com/mailru/easyjson"
 )
 
-type GinHandler struct {
+type Handler struct {
 	service service.ServiceImpl
 	config  config.Config
 }
 
-func CreateGinHandler(service service.ServiceImpl, config config.Config) *GinHandler {
-	return &GinHandler{
+func CreateGinHandler(service service.ServiceImpl, config config.Config) *Handler {
+	return &Handler{
 		service: service,
 		config:  config,
 	}
 }
 
-func (handler *GinHandler) GinPostRequestHandler() gin.HandlerFunc {
+func (handler *Handler) GinPostRequestHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		body, err := io.ReadAll(c.Request.Body)
 		isURL := string(body[0:4]) == "http"
@@ -41,7 +43,7 @@ func (handler *GinHandler) GinPostRequestHandler() gin.HandlerFunc {
 	}
 }
 
-func (handler *GinHandler) GinGetRequestHandler() gin.HandlerFunc {
+func (handler *Handler) GinGetRequestHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Request.URL.Path
 		val, ok := handler.service.GetOriginalURL(id)
@@ -52,6 +54,32 @@ func (handler *GinHandler) GinGetRequestHandler() gin.HandlerFunc {
 			return
 		} else {
 			c.String(http.StatusBadRequest, "This URL does not exist in vocabulary.")
+			return
+		}
+	}
+}
+
+func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		urlRequest := marshal.URLRequest{OriginalURL: ""}
+
+		if err := easyjson.UnmarshalFromReader(c.Request.Body, &urlRequest); err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		shortURL, err := handler.service.AddingURL(urlRequest.OriginalURL)
+		if err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.Writer.Header().Set("Content-Type", "application/json")
+		c.Status(http.StatusCreated)
+
+		urlResponse := marshal.URLResponse{ShortURL: handler.config.ShortURL + shortURL}
+
+		if _, err = easyjson.MarshalToWriter(&urlResponse, c.Writer); err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
