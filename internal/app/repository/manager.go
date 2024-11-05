@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/logger"
 	easyjson "github.com/mailru/easyjson"
 	"go.uber.org/zap"
 )
@@ -45,7 +44,7 @@ func (sm *StateManager) LoadFromFile() (*URLRepositoryState, error) {
 	state, err := reader.LoadState()
 
 	for k, v := range state.state {
-		logger.Log.Info("state to load from file", zap.String("shortUrl", k), zap.String("origUrl", v))
+		sm.log.Info("state to load from file", zap.String("shortUrl", k), zap.String("origUrl", v))
 	}
 	if err != nil {
 		return nil, err
@@ -61,7 +60,7 @@ func (sm *StateManager) SaveToFile(state *URLRepositoryState) error {
 	}
 	defer writer.Close()
 	for k, v := range state.state {
-		logger.Log.Info("state to save", zap.String("shortUrl", k), zap.String("origUrl", v))
+		sm.log.Info("state to save", zap.String("shortUrl", k), zap.String("origUrl", v))
 	}
 	err = writer.SaveState(state)
 	if err != nil {
@@ -129,6 +128,9 @@ func CreateWriter(fileName string, log zap.Logger) (*FileWriter, error) {
 func (writer *FileWriter) SaveState(state *URLRepositoryState) error {
 	urls := state.GetURLRepositoryState()
 
+	buffWriter := bufio.NewWriter(writer.file)
+	defer buffWriter.Flush()
+
 	index := 1
 	for shortURL, originalURL := range urls {
 		record := &FileRecord{
@@ -137,11 +139,11 @@ func (writer *FileWriter) SaveState(state *URLRepositoryState) error {
 			OriginalURL: originalURL,
 		}
 
-		if _, err := easyjson.MarshalToWriter(record, writer.file); err != nil {
+		if _, err := easyjson.MarshalToWriter(record, buffWriter); err != nil {
 			return fmt.Errorf("marshalling error: %s", err)
 		}
 
-		if _, err := writer.file.WriteString("\n"); err != nil {
+		if _, err := buffWriter.WriteString("\n"); err != nil {
 			return fmt.Errorf("write file error: %s", err)
 		}
 

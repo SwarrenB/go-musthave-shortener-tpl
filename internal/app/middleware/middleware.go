@@ -3,7 +3,6 @@ package middleware
 import (
 	"time"
 
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -33,19 +32,21 @@ import (
 // 	r.responseData.status = statusCode
 // }
 
-func WithLogging(c *gin.Context) {
-	start := time.Now()
+func WithLogging(logger zap.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
 
-	c.Next()
-	duration := time.Since(start)
+		c.Next()
+		duration := time.Since(start)
 
-	logger.Log.Info(
-		"request details",
-		zap.String("uri", c.Request.URL.Path),
-		zap.String("method", c.Request.Method),
-		zap.Int("status", c.Writer.Status()),
-		zap.Duration("duration", duration),
-		zap.Int("size", c.Writer.Size()),
-		zap.String("location", c.Writer.Header().Get("Location")),
-	)
+		logger.Info(
+			"request details",
+			zap.String("uri", c.Request.URL.Path),
+			zap.String("method", c.Request.Method),
+			zap.Int("status", c.Writer.Status()),
+			zap.Duration("duration", duration),
+			zap.Int("size", c.Writer.Size()),
+			zap.String("location", c.Writer.Header().Get("Location")),
+		)
+	}
 }

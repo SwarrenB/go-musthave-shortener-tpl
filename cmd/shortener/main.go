@@ -10,14 +10,9 @@ import (
 	"time"
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/handlers"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/logger"
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/middleware"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/urlgenerate"
-	"github.com/gin-gonic/gin"
-	compress "github.com/lf4096/gin-compress"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/server"
 	"go.uber.org/zap"
 )
 
@@ -28,33 +23,19 @@ func main() {
 }
 
 func run() error {
-	logger.Initialize("Info")
+	logger := logger.CreateLogger("Info").GetLogger()
 	appConfig := config.CreateGeneralConfig()
 	repo := repository.CreateInMemoryURLRepository()
-	generator := urlgenerate.CreateURLGenerator()
-	service := service.CreateShortenerService(repo, generator, appConfig)
-	stateManager := repository.CreateStateManager(appConfig, *logger.Log)
-	router := gin.Default()
-	handler := handlers.CreateGinHandler(service, *appConfig)
-	router.Use(middleware.WithLogging)
-	router.Use(compress.Compress())
-	router.Use(middleware.Decompress())
-	router.GET("/:id", handler.GinGetRequestHandler())
-	router.POST("/api/shorten", handler.HandlePostJSON())
-	router.POST("/", handler.GinPostRequestHandler())
-
-	server := http.Server{
-		Addr:    appConfig.ServerAddress,
-		Handler: router,
-	}
+	stateManager := repository.CreateStateManager(appConfig, logger)
+	server := server.CreateServer(appConfig, repo, stateManager, logger)
 
 	repoState, err := stateManager.LoadFromFile()
 	if err != nil {
-		logger.Log.Error("create repository state error")
+		logger.Error("create repository state error")
 	} else {
 		err := repo.RestoreURLRepository(repoState)
 		if err != nil {
-			logger.Log.Error("restore repository state error")
+			logger.Error("restore repository state error")
 		}
 	}
 
@@ -68,18 +49,17 @@ func run() error {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
-	logger.Log.Info("Server started")
+	logger.Info("Server started")
 
 	<-stopChan
-	logger.Log.Info("Repo after server started", zap.Any("repo", repo))
-	logger.Log.Info("Shutdown signal received")
+	logger.Info("Shutdown signal received")
 
 	repoState, err = repo.CreateURLRepository()
 	if err != nil {
-		logger.Log.Error("create repository state error")
+		logger.Error("create repository state error")
 	} else {
 		if err := stateManager.SaveToFile(repoState); err != nil {
-			logger.Log.Error("failed to store state to file", zap.String("file_storage_path", appConfig.FileStoragePath))
+			logger.Error("failed to store state to file", zap.String("file_storage_path", appConfig.FileStoragePath))
 		}
 	}
 
@@ -87,9 +67,9 @@ func run() error {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		logger.Log.Error("Server forced to shut down")
+		logger.Error("Server forced to shut down")
 	} else {
-		logger.Log.Info("Server shut down gracefully")
+		logger.Info("Server shut down gracefully")
 	}
 
 	return nil

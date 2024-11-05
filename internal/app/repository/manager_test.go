@@ -29,7 +29,7 @@ func TestStateManager_LoadFromFile(t *testing.T) {
 		config.FileStoragePath = "records.json"
 		defer os.Remove(config.FileStoragePath)
 
-		manager := CreateStateManager(config, *logger.Log)
+		manager := CreateStateManager(config, logger.CreateLogger("Info").GetLogger())
 
 		err := manager.SaveToFile(testRepoState)
 		require.NoError(t, err)
