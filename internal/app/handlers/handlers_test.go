@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/logger"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/urlgenerate"
@@ -22,7 +23,8 @@ func Test_ginPostRequestHandler(t *testing.T) {
 	repo := repository.CreateInMemoryURLRepository()
 	generator := urlgenerate.CreateURLGenerator()
 	service := service.CreateShortenerService(repo, generator, appConfig)
-	handler := CreateGinHandler(service, *appConfig)
+	log := logger.CreateLogger("Info").GetLogger()
+	handler := CreateGinHandler(service, *appConfig, log)
 	type args struct {
 		code        int
 		contentType string
@@ -94,8 +96,9 @@ func Test_ginGetRequestHandler(t *testing.T) {
 	appConfig := config.CreateDefaultConfig()
 	repo := repository.CreateInMemoryURLRepository()
 	generator := urlgenerate.CreateURLGenerator()
+	log := logger.CreateLogger("Info").GetLogger()
 	service := service.CreateShortenerService(repo, generator, appConfig)
-	handler := CreateGinHandler(service, *appConfig)
+	handler := CreateGinHandler(service, *appConfig, log)
 	originalURL := "http://practictum.yandex.ru"
 	shortURL, _ := handler.service.AddingURL(originalURL)
 	for _, test := range tests {

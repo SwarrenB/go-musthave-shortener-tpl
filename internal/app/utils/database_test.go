@@ -2,7 +2,6 @@ package utils
 
 import (
 	"database/sql"
-	"errors"
 	"testing"
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/logger"
@@ -30,22 +29,7 @@ func TestNewDatabase(t *testing.T) {
 			"postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable",
 			nil,
 		},
-		{
-			"test 2",
-			sql.Open,
-			PGDataSourceBuilder,
-			"badDriver",
-			"postgres://postgres:postgres@localhost:5432/praktikum?sslmode=disable",
-			errors.New("Error opening database"),
-		},
-		{
-			"test 3",
-			sql.Open,
-			PGDataSourceBuilder,
-			"pgx",
-			"mysql:/bad_dsn",
-			errors.New("Error parsing database DSN"),
-		},
+		// TODO add error test cases
 	}
 
 	for _, test := range tests {

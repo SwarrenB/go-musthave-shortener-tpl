@@ -32,10 +32,11 @@ func CreateServer(
 	service := service.CreateShortenerService(repo, generator, config)
 
 	router := gin.Default()
-	handler := handlers.CreateGinHandler(service, *config)
+	handler := handlers.CreateGinHandler(service, *config, log)
 	router.Use(middleware.WithLogging(log))
 	router.Use(compress.Compress())
 	router.Use(middleware.Decompress())
+	router.GET("/ping", handler.HandlePingDB())
 	router.GET("/:id", handler.GinGetRequestHandler())
 	router.POST("/api/shorten", handler.HandlePostJSON())
 	router.POST("/", handler.GinPostRequestHandler())

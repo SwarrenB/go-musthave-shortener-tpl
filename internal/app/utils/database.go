@@ -2,9 +2,11 @@ package utils
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 )
 
@@ -34,12 +36,12 @@ func NewDatabase(
 ) (*SQLDatabase, error) {
 	dataSourceName, dbConfig, err := dataSourceBuilder(dsn)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("error parsing database DSN")
 	}
 
 	sqldb, err := dbOpener(driverName, dataSourceName)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("error opening database")
 	}
 
 	return &SQLDatabase{
