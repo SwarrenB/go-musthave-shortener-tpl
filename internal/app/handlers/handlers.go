@@ -7,19 +7,23 @@ import (
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/marshal"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/mailru/easyjson"
+	"go.uber.org/zap"
 )
 
 type Handler struct {
 	service service.ServiceImpl
 	config  config.Config
+	logger  zap.Logger
 }
 
-func CreateGinHandler(service service.ServiceImpl, config config.Config) *Handler {
+func CreateGinHandler(service service.ServiceImpl, config config.Config, logger zap.Logger) *Handler {
 	return &Handler{
 		service: service,
 		config:  config,
+		logger:  logger,
 	}
 }
 
@@ -82,5 +86,25 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
+	}
+}
+
+func (handler *Handler) HandlePingDB() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		database, err := utils.NewPG(handler.config.DatabaseDSN, handler.logger)
+		if err != nil {
+			http.Error(c.Writer, "cannot open database", http.StatusInternalServerError)
+
+			return
+		}
+		defer database.Close()
+
+		if err := database.Ping(); err != nil {
+			http.Error(c.Writer, "database is not reachable", http.StatusInternalServerError)
+
+			return
+		}
+
+		c.AbortWithStatus(http.StatusOK)
 	}
 }

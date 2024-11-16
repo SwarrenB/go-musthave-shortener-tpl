@@ -18,6 +18,7 @@ type Config struct {
 	ServerAddress   string `env:"SERVER_ADDRESS"`
 	ShortURL        string `env:"BASE_URL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	DatabaseDSN     string `env:"DATABASE_DSN"`
 }
 
 func (s ServerAddress) String() string {
@@ -39,6 +40,7 @@ func CreateDefaultConfig() *Config {
 		ServerAddress:   "localhost:8080",
 		ShortURL:        `http://localhost:8080`,
 		FileStoragePath: `records.json`,
+		DatabaseDSN:     ``,
 	}
 
 }
@@ -56,6 +58,7 @@ func CreateGeneralConfig() *Config {
 	flag.StringVar(&flagsConfig.ServerAddress, "a", "", "server address {host:port}")
 	flag.StringVar(&flagsConfig.ShortURL, "b", "", "URL address http://localhost:8080/{id}")
 	flag.StringVar(&flagsConfig.FileStoragePath, "f", "", "url storage file path")
+	flag.StringVar(&flagsConfig.DatabaseDSN, "d", flagsConfig.DatabaseDSN, "database DSN")
 	flag.Parse()
 
 	if envConfig.ServerAddress != "" {
@@ -74,6 +77,12 @@ func CreateGeneralConfig() *Config {
 		devConfig.FileStoragePath = envConfig.FileStoragePath
 	} else if flagsConfig.FileStoragePath != "" {
 		devConfig.FileStoragePath = flagsConfig.FileStoragePath
+	}
+
+	if envConfig.DatabaseDSN != "" {
+		devConfig.DatabaseDSN = envConfig.DatabaseDSN
+	} else if flagsConfig.DatabaseDSN != "" {
+		devConfig.DatabaseDSN = flagsConfig.DatabaseDSN
 	}
 
 	return devConfig
