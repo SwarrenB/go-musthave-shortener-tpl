@@ -105,7 +105,7 @@ func (sqldb *SQLDatabase) GetFromDB(shortURL string) (originalURL string, ok boo
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	row := sqldb.database.QueryRowContext(ctx, getUrlRegular, shortURL)
+	row := sqldb.database.QueryRowContext(ctx, getURLRegular, shortURL)
 	err := row.Scan(&originalURL)
 	if err != nil {
 		sqldb.log.Error("failed to query url",
@@ -120,7 +120,7 @@ func (sqldb *SQLDatabase) AddToDB(shortURL, originalURL string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := sqldb.database.ExecContext(ctx, setUrlRegular, shortURL, originalURL)
+	_, err := sqldb.database.ExecContext(ctx, setURLRegular, shortURL, originalURL)
 	if err != nil {
 		sqldb.log.Error("failed to set url",
 			zap.String("short_url", shortURL),
