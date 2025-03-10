@@ -24,7 +24,7 @@ func Test_ginPostRequestHandler(t *testing.T) {
 	generator := urlgenerate.CreateURLGenerator()
 	service := service.CreateShortenerService(repo, generator, appConfig)
 	log := logger.CreateLogger("Info").GetLogger()
-	handler := CreateGinHandler(service, *appConfig, log)
+	handler := CreateGinHandler(service, *appConfig, log, nil)
 	type args struct {
 		code        int
 		contentType string
@@ -98,7 +98,7 @@ func Test_ginGetRequestHandler(t *testing.T) {
 	generator := urlgenerate.CreateURLGenerator()
 	log := logger.CreateLogger("Info").GetLogger()
 	service := service.CreateShortenerService(repo, generator, appConfig)
-	handler := CreateGinHandler(service, *appConfig, log)
+	handler := CreateGinHandler(service, *appConfig, log, nil)
 	originalURL := "http://practictum.yandex.ru"
 	shortURL, _ := handler.service.AddingURL(originalURL)
 	for _, test := range tests {

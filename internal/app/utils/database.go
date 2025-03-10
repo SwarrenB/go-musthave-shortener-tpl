@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -90,10 +92,39 @@ func PGDataSourceBuilder(dsn string) (string, *DBConfig, error) {
 	}, nil
 }
 
-func NewPG(dsn string, log zap.Logger) (*SQLDatabase, error) {
+func Init(dsn string, log zap.Logger) *SQLDatabase {
 	sqldb, err := NewDatabase(sql.Open, PGDataSourceBuilder, log, "pgx", dsn)
 	if err != nil {
-		return nil, err
+		log.Fatal("Error connecting database")
+		return nil
 	}
-	return sqldb, nil
+	return sqldb
+}
+
+func (sqldb *SQLDatabase) GetFromDB(shortURL string) (originalURL string, ok bool) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	row := sqldb.database.QueryRowContext(ctx, getUrlRegular, shortURL)
+	err := row.Scan(&originalURL)
+	if err != nil {
+		sqldb.log.Error("failed to query url",
+			zap.String("short_url", shortURL),
+			zap.String("original_url", originalURL),
+			zap.Error(err))
+	}
+
+	return originalURL, row != nil
+}
+func (sqldb *SQLDatabase) AddToDB(shortURL, originalURL string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := sqldb.database.ExecContext(ctx, setUrlRegular, shortURL, originalURL)
+	if err != nil {
+		sqldb.log.Error("failed to set url",
+			zap.String("short_url", shortURL),
+			zap.String("original_url", originalURL),
+			zap.Error(err))
+	}
 }

@@ -14,16 +14,18 @@ import (
 )
 
 type Handler struct {
-	service service.ServiceImpl
-	config  config.Config
-	logger  zap.Logger
+	service  service.ServiceImpl
+	config   config.Config
+	logger   zap.Logger
+	database *utils.SQLDatabase
 }
 
-func CreateGinHandler(service service.ServiceImpl, config config.Config, logger zap.Logger) *Handler {
+func CreateGinHandler(service service.ServiceImpl, config config.Config, logger zap.Logger, database *utils.SQLDatabase) *Handler {
 	return &Handler{
-		service: service,
-		config:  config,
-		logger:  logger,
+		service:  service,
+		config:   config,
+		logger:   logger,
+		database: database,
 	}
 }
 
@@ -89,19 +91,17 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 	}
 }
 
-func (handler *Handler) HandlePingDB() gin.HandlerFunc {
+func (handler *Handler) HandlePingDB(database *utils.SQLDatabase) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		database, err := utils.NewPG(handler.config.DatabaseDSN, handler.logger)
-		if err != nil {
-			http.Error(c.Writer, "cannot open database", http.StatusInternalServerError)
+		defer database.Close()
 
+		if database == nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Server doesn't use database"})
 			return
 		}
-		defer database.Close()
 
 		if err := database.Ping(); err != nil {
 			http.Error(c.Writer, "database is not reachable", http.StatusInternalServerError)
-
 			return
 		}
 
