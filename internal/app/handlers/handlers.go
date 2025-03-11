@@ -39,7 +39,7 @@ func (handler *Handler) GinPostRequestHandler() gin.HandlerFunc {
 			return
 		} else {
 			shortURL, err := handler.service.AddingURL(string(body))
-			if err != nil {
+			if err {
 				c.String(http.StatusConflict, string(body))
 				return
 			}
@@ -76,8 +76,8 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 		}
 
 		shortURL, err := handler.service.AddingURL(urlRequest.OriginalURL)
-		if err != nil {
-			c.String(http.StatusBadRequest, err.Error())
+		if err {
+			c.String(http.StatusBadRequest, urlRequest.OriginalURL)
 			return
 		}
 		c.Writer.Header().Set("Content-Type", "application/json")
@@ -85,7 +85,7 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 
 		urlResponse := marshal.URLResponse{ShortURL: handler.config.ShortURL + shortURL}
 
-		if _, err = easyjson.MarshalToWriter(&urlResponse, c.Writer); err != nil {
+		if _, err := easyjson.MarshalToWriter(&urlResponse, c.Writer); err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -137,8 +137,8 @@ func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 
 	for i, requestURL := range requestURLs {
 		shortURL, err := handler.service.AddingURL(requestURL.OriginalURL)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to shorten URL"})
+		if err {
+			c.AbortWithStatusJSON(http.StatusConflict, requestURL.OriginalURL)
 			return
 		}
 

@@ -147,8 +147,7 @@ func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, e error) 
 
 	return originalURL, e
 }
-
-func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) error {
+func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -158,7 +157,7 @@ func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) error {
 			zap.String("short_url", shortURL),
 			zap.String("original_url", originalURL),
 			zap.Error(err))
-		return err
+		return true
 	}
-	return nil
+	return false
 }
