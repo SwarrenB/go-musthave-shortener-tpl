@@ -95,10 +95,23 @@ func PGDataSourceBuilder(dsn string) (string, *DBConfig, error) {
 func Init(dsn string, log zap.Logger) *SQLDatabase {
 	sqldb, err := NewDatabase(sql.Open, PGDataSourceBuilder, log, "pgx", dsn)
 	if err != nil {
-		log.Fatal("Error connecting database")
+		log.Fatal("Error creating database")
 		return nil
+	} else {
+		sqldb.CreateTables(log)
 	}
 	return sqldb
+}
+
+func (sqldb *SQLDatabase) CreateTables(logger zap.Logger) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := sqldb.database.ExecContext(ctx, createTableQuery); err != nil {
+		logger.Fatal("Failed to create tables",
+			zap.Error(err),
+			zap.String("Query", createTableQuery),
+		)
+	}
 }
 
 func (sqldb *SQLDatabase) GetFromDB(shortURL string) (originalURL string, ok bool) {
