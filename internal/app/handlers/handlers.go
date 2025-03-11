@@ -144,7 +144,7 @@ func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 
 		responseURLs[i] = URLResponse{
 			CorrelationID: requestURL.CorrelationID,
-			ShortURL:      handler.config.ServerAddress + shortURL,
+			ShortURL:      handler.config.ShortURL + shortURL,
 		}
 	}
 
