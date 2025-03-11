@@ -138,7 +138,7 @@ func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 	for i, requestURL := range requestURLs {
 		shortURL, err := handler.service.AddingURL(requestURL.OriginalURL)
 		if err {
-			c.String(http.StatusConflict, requestURL.OriginalURL)
+			c.AbortWithStatusJSON(http.StatusConflict, requestURL.OriginalURL)
 			return
 		}
 
