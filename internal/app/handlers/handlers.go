@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 
@@ -107,4 +108,46 @@ func (handler *Handler) HandlePingDB(database *utils.SQLDatabase) gin.HandlerFun
 
 		c.AbortWithStatus(http.StatusOK)
 	}
+}
+
+type URLRequest struct {
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
+}
+
+type URLResponse struct {
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
+}
+
+func (handler *Handler) URLCreatorBatch(c *gin.Context) {
+	defer c.Request.Body.Close()
+
+	var requestURLs []struct {
+		CorrelationID string `json:"correlation_id"`
+		OriginalURL   string `json:"original_url"`
+	}
+
+	if err := json.NewDecoder(c.Request.Body).Decode(&requestURLs); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format"})
+		return
+	}
+
+	responseURLs := make([]URLResponse, len(requestURLs))
+
+	for i, requestURL := range requestURLs {
+		shortURL, err := handler.service.AddingURL(requestURL.OriginalURL)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to shorten URL"})
+			return
+		}
+
+		responseURLs[i] = URLResponse{
+			CorrelationID: requestURL.CorrelationID,
+			ShortURL:      handler.config.ServerAddress + "/" + shortURL,
+		}
+	}
+
+	c.Header("Content-Type", "application/json")
+	c.JSON(http.StatusCreated, responseURLs)
 }
