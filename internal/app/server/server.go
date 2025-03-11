@@ -31,7 +31,14 @@ func CreateServer(
 	database *utils.SQLDatabase,
 ) *Server {
 	generator := urlgenerate.CreateURLGenerator()
-	service := service.CreateShortenerService(repo, generator, config)
+
+	var store repository.URLRepository = database
+	if config.DatabaseDSN != "" {
+		database.CreateTables(log)
+	} else {
+		store = repo
+	}
+	service := service.CreateShortenerService(store, generator, config)
 
 	router := gin.Default()
 	handler := handlers.CreateGinHandler(service, *config, log, database)

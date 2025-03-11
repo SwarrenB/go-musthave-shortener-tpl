@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
@@ -27,6 +28,25 @@ type SQLDatabase struct {
 	database *sql.DB
 	dbConfig *DBConfig
 	log      zap.Logger
+}
+
+// CreateURLRepository implements repository.URLRepository.
+func (sqldb *SQLDatabase) CreateURLRepository() (*repository.URLRepositoryState, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := sqldb.database.ExecContext(ctx, createTableQuery); err != nil {
+		sqldb.log.Fatal("Failed to create tables",
+			zap.Error(err),
+			zap.String("Query", createTableQuery),
+		)
+		return nil, err
+	}
+	return nil, nil
+}
+
+// RestoreURLRepository implements repository.URLRepository.
+func (sqldb *SQLDatabase) RestoreURLRepository(m *repository.URLRepositoryState) error {
+	panic("unimplemented")
 }
 
 func NewDatabase(
@@ -97,8 +117,6 @@ func Init(dsn string, log zap.Logger) *SQLDatabase {
 	if err != nil {
 		log.Fatal("Error creating database")
 		return nil
-	} else {
-		sqldb.CreateTables(log)
 	}
 	return sqldb
 }
@@ -114,7 +132,7 @@ func (sqldb *SQLDatabase) CreateTables(logger zap.Logger) {
 	}
 }
 
-func (sqldb *SQLDatabase) GetFromDB(shortURL string) (originalURL string, ok bool) {
+func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, e error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -127,9 +145,9 @@ func (sqldb *SQLDatabase) GetFromDB(shortURL string) (originalURL string, ok boo
 			zap.Error(err))
 	}
 
-	return originalURL, row != nil
+	return originalURL, e
 }
-func (sqldb *SQLDatabase) AddToDB(shortURL, originalURL string) {
+func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -139,5 +157,7 @@ func (sqldb *SQLDatabase) AddToDB(shortURL, originalURL string) {
 			zap.String("short_url", shortURL),
 			zap.String("original_url", originalURL),
 			zap.Error(err))
+		return err
 	}
+	return nil
 }
