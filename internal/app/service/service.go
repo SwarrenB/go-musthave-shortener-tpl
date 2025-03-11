@@ -7,7 +7,7 @@ import (
 )
 
 type ServiceImpl interface {
-	AddingURL(originalURL string) (string, bool)
+	AddingURL(originalURL string) (string, error)
 	GetOriginalURL(shortURL string) (string, error)
 }
 
@@ -29,18 +29,18 @@ func CreateShortenerService(
 	}
 }
 
-func (s *ShortenerService) AddingURL(originalURL string) (string, bool) {
+func (s *ShortenerService) AddingURL(originalURL string) (string, error) {
 	var shortURL string
-	var err bool
+	var err error
 	shortURL = s.urlGenerator.GenerateURL(originalURL)
 
 	err = s.repo.AddURL(shortURL, originalURL)
 
-	if err {
+	if err != nil {
 		return "", err
 	}
 
-	return shortURL, err
+	return shortURL, nil
 }
 
 func (s *ShortenerService) GetOriginalURL(shortURL string) (string, error) {
