@@ -9,7 +9,6 @@ import (
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/urlgenerate"
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/utils"
 	"github.com/gin-gonic/gin"
 	compress "github.com/lf4096/gin-compress"
 	"go.uber.org/zap"
@@ -23,23 +22,27 @@ type Server struct {
 	log     zap.Logger
 }
 
+func getRepository(config *config.Config, defaultRepo repository.URLRepository, database *repository.SQLDatabase, log zap.Logger) repository.URLRepository {
+	if config.DatabaseDSN == "" {
+		return defaultRepo
+	}
+
+	database.CreateTables(log)
+	return database
+}
+
 func CreateServer(
 	config *config.Config,
 	repo repository.URLRepository,
 	manager *repository.StateManager,
 	log zap.Logger,
-	database *utils.SQLDatabase,
+	database *repository.SQLDatabase,
 ) *Server {
 	generator := urlgenerate.CreateURLGenerator()
 
-	var store repository.URLRepository = database
-	if config.DatabaseDSN != "" {
-		database.CreateTables(log)
-	} else {
-		store = repo
-	}
+	store := getRepository(config, repo, database, log)
 	service := service.CreateShortenerService(store, generator, config)
-
+	defer database.Close()
 	router := gin.Default()
 	handler := handlers.CreateGinHandler(service, *config, log, database)
 	router.Use(middleware.WithLogging(log))

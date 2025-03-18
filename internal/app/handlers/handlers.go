@@ -7,8 +7,8 @@ import (
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/config"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/marshal"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/mailru/easyjson"
 	"go.uber.org/zap"
@@ -18,10 +18,10 @@ type Handler struct {
 	service  service.ServiceImpl
 	config   config.Config
 	logger   zap.Logger
-	database *utils.SQLDatabase
+	database *repository.SQLDatabase
 }
 
-func CreateGinHandler(service service.ServiceImpl, config config.Config, logger zap.Logger, database *utils.SQLDatabase) *Handler {
+func CreateGinHandler(service service.ServiceImpl, config config.Config, logger zap.Logger, database *repository.SQLDatabase) *Handler {
 	return &Handler{
 		service:  service,
 		config:   config,
@@ -39,8 +39,8 @@ func (handler *Handler) GinPostRequestHandler() gin.HandlerFunc {
 			return
 		} else {
 			shortURL, err := handler.service.AddingURL(string(body))
-			if err {
-				c.String(http.StatusConflict, string(body))
+			if err != nil {
+				c.String(http.StatusConflict, shortURL)
 				return
 			}
 			c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
@@ -76,8 +76,8 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 		}
 
 		shortURL, err := handler.service.AddingURL(urlRequest.OriginalURL)
-		if err {
-			c.String(http.StatusBadRequest, urlRequest.OriginalURL)
+		if err != nil {
+			c.String(http.StatusBadRequest, shortURL)
 			return
 		}
 		c.Writer.Header().Set("Content-Type", "application/json")
@@ -92,9 +92,8 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 	}
 }
 
-func (handler *Handler) HandlePingDB(database *utils.SQLDatabase) gin.HandlerFunc {
+func (handler *Handler) HandlePingDB(database *repository.SQLDatabase) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		defer database.Close()
 
 		if database == nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Server doesn't use database"})
@@ -123,10 +122,7 @@ type URLResponse struct {
 func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 	defer c.Request.Body.Close()
 
-	var requestURLs []struct {
-		CorrelationID string `json:"correlation_id"`
-		OriginalURL   string `json:"original_url"`
-	}
+	var requestURLs []URLRequest
 
 	if err := json.NewDecoder(c.Request.Body).Decode(&requestURLs); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format"})
@@ -137,8 +133,8 @@ func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 
 	for i, requestURL := range requestURLs {
 		shortURL, err := handler.service.AddingURL(requestURL.OriginalURL)
-		if err {
-			c.AbortWithStatusJSON(http.StatusConflict, requestURL.OriginalURL)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusConflict, shortURL)
 			return
 		}
 

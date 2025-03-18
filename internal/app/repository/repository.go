@@ -6,7 +6,7 @@ import (
 )
 
 type URLRepository interface {
-	AddURL(shortURL string, originalURL string) bool
+	AddURL(shortURL string, originalURL string) (string, error)
 	GetURL(shortURL string) (string, error)
 
 	CreateURLRepository() (*URLRepositoryState, error)
@@ -23,9 +23,15 @@ func CreateInMemoryURLRepository() *URLRepositoryImpl {
 	}
 }
 
-func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string) bool {
-	_, ok := ms.repo.LoadOrStore(shortURL, originalURL)
-	return ok
+func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string) (string, error) {
+	value, ok := ms.repo.LoadOrStore(shortURL, originalURL)
+	var err error
+	if ok {
+		err = errors.New("this URL already exists")
+	} else {
+		err = nil
+	}
+	return value.(string), err
 }
 
 func (ms *URLRepositoryImpl) GetURL(shortURL string) (string, error) {

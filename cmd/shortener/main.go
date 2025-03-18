@@ -13,7 +13,6 @@ import (
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/logger"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/server"
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/utils"
 	"go.uber.org/zap"
 )
 
@@ -29,10 +28,10 @@ func run() error {
 	repo := repository.CreateInMemoryURLRepository()
 	stateManager := repository.CreateStateManager(appConfig, logger)
 
-	var database *utils.SQLDatabase
+	var database *repository.SQLDatabase
 
 	if appConfig.DatabaseDSN != "" {
-		database = utils.Init(appConfig.DatabaseDSN, logger)
+		database = repository.NewSQLDatabaseConnection(appConfig.DatabaseDSN, logger)
 	}
 	server := server.CreateServer(appConfig, repo, stateManager, logger, database)
 	repoState, err := stateManager.LoadFromFile()

@@ -1,4 +1,4 @@
-package utils
+package repository
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/utils"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
@@ -31,13 +31,13 @@ type SQLDatabase struct {
 }
 
 // CreateURLRepository implements repository.URLRepository.
-func (sqldb *SQLDatabase) CreateURLRepository() (*repository.URLRepositoryState, error) {
+func (sqldb *SQLDatabase) CreateURLRepository() (*URLRepositoryState, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if _, err := sqldb.database.ExecContext(ctx, createTableQuery); err != nil {
+	if _, err := sqldb.database.ExecContext(ctx, utils.CreateTableQuery); err != nil {
 		sqldb.log.Fatal("Failed to create tables",
 			zap.Error(err),
-			zap.String("Query", createTableQuery),
+			zap.String("Query", utils.CreateTableQuery),
 		)
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (sqldb *SQLDatabase) CreateURLRepository() (*repository.URLRepositoryState,
 }
 
 // RestoreURLRepository implements repository.URLRepository.
-func (sqldb *SQLDatabase) RestoreURLRepository(m *repository.URLRepositoryState) error {
+func (sqldb *SQLDatabase) RestoreURLRepository(m *URLRepositoryState) error {
 	panic("unimplemented")
 }
 
@@ -112,7 +112,7 @@ func PGDataSourceBuilder(dsn string) (string, *DBConfig, error) {
 	}, nil
 }
 
-func Init(dsn string, log zap.Logger) *SQLDatabase {
+func NewSQLDatabaseConnection(dsn string, log zap.Logger) *SQLDatabase {
 	sqldb, err := NewDatabase(sql.Open, PGDataSourceBuilder, log, "pgx", dsn)
 	if err != nil {
 		log.Fatal("Error creating database")
@@ -124,20 +124,20 @@ func Init(dsn string, log zap.Logger) *SQLDatabase {
 func (sqldb *SQLDatabase) CreateTables(logger zap.Logger) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if _, err := sqldb.database.ExecContext(ctx, createTableQuery); err != nil {
+	if _, err := sqldb.database.ExecContext(ctx, utils.CreateTableQuery); err != nil {
 		logger.Fatal("Failed to create tables",
 			zap.Error(err),
-			zap.String("Query", createTableQuery),
+			zap.String("Query", utils.CreateTableQuery),
 		)
 	}
 }
 
-func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, e error) {
+func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	row := sqldb.database.QueryRowContext(ctx, getURLRegular, shortURL)
-	err := row.Scan(&originalURL)
+	row := sqldb.database.QueryRowContext(ctx, utils.GetURLRegular, shortURL)
+	err = row.Scan(&originalURL)
 	if err != nil {
 		sqldb.log.Error("failed to query url",
 			zap.String("short_url", shortURL),
@@ -145,19 +145,18 @@ func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, e error) 
 			zap.Error(err))
 	}
 
-	return originalURL, e
+	return originalURL, err
 }
-func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) bool {
+func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := sqldb.database.ExecContext(ctx, setURLRegular, shortURL, originalURL)
+	_, err := sqldb.database.ExecContext(ctx, utils.SetURLRegular, shortURL, originalURL)
 	if err != nil {
 		sqldb.log.Error("failed to set url",
 			zap.String("short_url", shortURL),
 			zap.String("original_url", originalURL),
 			zap.Error(err))
-		return true
 	}
-	return false
+	return shortURL, err
 }
