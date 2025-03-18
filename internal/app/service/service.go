@@ -30,17 +30,18 @@ func CreateShortenerService(
 }
 
 func (s *ShortenerService) AddingURL(originalURL string) (string, error) {
-	var val, shortURL string
+	var shortURL string
 	var err error
 	shortURL = s.urlGenerator.GenerateURL(originalURL)
 
-	val, err = s.repo.AddURL(shortURL, originalURL)
+	err = s.repo.AddURL(shortURL, originalURL)
 
 	if err != nil {
-		return val, err
+		existingURL, _ := s.repo.GetURL(originalURL)
+		return existingURL, err
 	}
 
-	return shortURL, err
+	return shortURL, nil
 }
 
 func (s *ShortenerService) GetOriginalURL(shortURL string) (string, error) {
