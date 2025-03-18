@@ -10,4 +10,6 @@ const CreateTableQuery = `CREATE TABLE IF NOT EXISTS urls (
 
 const GetURLRegular = `SELECT original_url FROM urls WHERE short_url = $1`
 
+const GetExistingURLRegular = `SELECT short_url FROM urls WHERE original_url = $1`
+
 const SetURLRegular = `INSERT INTO urls (short_url, original_url) VALUES ($1, $2)`

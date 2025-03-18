@@ -37,7 +37,7 @@ func (s *ShortenerService) AddingURL(originalURL string) (string, error) {
 	err = s.repo.AddURL(shortURL, originalURL)
 
 	if err != nil {
-		existingURL, _ := s.repo.GetURL(originalURL)
+		existingURL := s.repo.GetExistingURL(originalURL)
 		return existingURL, err
 	}
 

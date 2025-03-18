@@ -160,3 +160,19 @@ func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) error {
 	}
 	return err
 }
+
+func (sqldb *SQLDatabase) GetExistingURL(originalURL string) (shortURL string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	row, err := sqldb.database.QueryContext(ctx, utils.GetExistingURLRegular, originalURL)
+	e := row.Scan(&shortURL)
+	if err != nil || e != nil {
+		sqldb.log.Error("failed to set url",
+			zap.String("short_url", shortURL),
+			zap.String("original_url", originalURL),
+			zap.Error(err))
+		return ""
+	}
+	return shortURL
+}
