@@ -42,7 +42,6 @@ func CreateServer(
 
 	store := getRepository(config, repo, database, log)
 	service := service.CreateShortenerService(store, generator, config)
-	defer database.Close()
 	router := gin.Default()
 	handler := handlers.CreateGinHandler(service, *config, log, database)
 	router.Use(middleware.WithLogging(log))

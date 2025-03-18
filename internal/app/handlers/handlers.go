@@ -95,6 +95,8 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 func (handler *Handler) HandlePingDB(database *repository.SQLDatabase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
+		defer database.Close()
+
 		if database == nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Server doesn't use database"})
 			return
@@ -134,7 +136,7 @@ func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 	for i, requestURL := range requestURLs {
 		shortURL, err := handler.service.AddingURL(requestURL.OriginalURL)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusConflict, shortURL)
+			c.String(http.StatusConflict, shortURL)
 			return
 		}
 
