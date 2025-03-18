@@ -40,11 +40,11 @@ func (handler *Handler) GinPostRequestHandler() gin.HandlerFunc {
 		} else {
 			shortURL, err := handler.service.AddingURL(string(body))
 			if err != nil {
-				c.String(http.StatusConflict, shortURL)
-				return
+				c.String(http.StatusConflict, handler.config.ShortURL+shortURL)
+			} else {
+				c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+				c.String(http.StatusCreated, handler.config.ShortURL+shortURL)
 			}
-			c.Writer.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-			c.String(http.StatusCreated, handler.config.ShortURL+shortURL)
 			return
 		}
 	}
@@ -77,7 +77,7 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 
 		shortURL, err := handler.service.AddingURL(urlRequest.OriginalURL)
 		if err != nil {
-			c.String(http.StatusBadRequest, shortURL)
+			c.String(http.StatusBadRequest, handler.config.ShortURL+shortURL)
 			return
 		}
 		c.Writer.Header().Set("Content-Type", "application/json")
@@ -136,7 +136,7 @@ func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 	for i, requestURL := range requestURLs {
 		shortURL, err := handler.service.AddingURL(requestURL.OriginalURL)
 		if err != nil {
-			c.String(http.StatusConflict, shortURL)
+			c.String(http.StatusConflict, handler.config.ShortURL+shortURL)
 			return
 		}
 

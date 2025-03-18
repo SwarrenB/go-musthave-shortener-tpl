@@ -25,14 +25,12 @@ func CreateInMemoryURLRepository() *URLRepositoryImpl {
 }
 
 func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string) error {
-	var err error
 	_, ok := ms.repo.LoadOrStore(shortURL, originalURL)
 	if ok {
-		err = errors.New("this URL already exists")
+		return errors.New("this URL already exists")
 	} else {
-		err = nil
+		return nil
 	}
-	return err
 }
 
 func (ms *URLRepositoryImpl) GetURL(shortURL string) (string, error) {
