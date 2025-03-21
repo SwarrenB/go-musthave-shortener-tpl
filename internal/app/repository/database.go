@@ -162,7 +162,7 @@ func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) (existingURL stri
 			zap.String("short_url", shortURL),
 			zap.String("original_url", originalURL),
 			zap.Error(err))
-		err = sqldb.database.QueryRow(utils.GetExistingURLRegular, originalURL).Scan(&existingURL)
+		_ = sqldb.database.QueryRow(utils.GetExistingURLRegular, originalURL).Scan(&existingURL)
 		return existingURL, err
 	}
 	return shortURL, nil
