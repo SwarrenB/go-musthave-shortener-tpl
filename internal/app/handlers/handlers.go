@@ -69,6 +69,7 @@ func (handler *Handler) GinGetRequestHandler() gin.HandlerFunc {
 func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		urlRequest := marshal.URLRequest{OriginalURL: ""}
+		c.Writer.Header().Set("Content-Type", "application/json")
 
 		if err := easyjson.UnmarshalFromReader(c.Request.Body, &urlRequest); err != nil {
 			c.String(http.StatusBadRequest, err.Error())
@@ -77,10 +78,9 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 
 		shortURL, err := handler.service.AddingURL(urlRequest.OriginalURL)
 		if err != nil {
-			c.String(http.StatusBadRequest, handler.config.ShortURL+shortURL)
+			c.String(http.StatusConflict, handler.config.ShortURL+shortURL)
 			return
 		}
-		c.Writer.Header().Set("Content-Type", "application/json")
 		c.Status(http.StatusCreated)
 
 		urlResponse := marshal.URLResponse{ShortURL: handler.config.ShortURL + shortURL}
