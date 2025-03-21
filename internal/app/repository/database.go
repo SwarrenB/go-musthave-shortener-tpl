@@ -147,32 +147,22 @@ func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error
 
 	return originalURL, err
 }
-func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) error {
+func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) (existingURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	_, err := sqldb.database.ExecContext(ctx, utils.SetURLRegular, shortURL, originalURL)
-	if err != nil {
+	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, originalURL).Scan(&existingURL)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		sqldb.log.Error("failed to set url",
 			zap.String("short_url", shortURL),
 			zap.String("original_url", originalURL),
 			zap.Error(err))
-	}
-	return err
-}
-
-func (sqldb *SQLDatabase) GetExistingURL(originalURL string) (shortURL string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	row := sqldb.database.QueryRowContext(ctx, utils.GetExistingURLRegular, originalURL)
-	err := row.Scan(&shortURL)
-	if err != nil {
-		sqldb.log.Error("failed to set url",
+		return existingURL, err
+	} else if errors.Is(err, sql.ErrNoRows) {
+		sqldb.log.Error("this url already exists",
 			zap.String("short_url", shortURL),
 			zap.String("original_url", originalURL),
 			zap.Error(err))
-		return ""
+		return existingURL, err
 	}
-	return shortURL
+	return shortURL, nil
 }

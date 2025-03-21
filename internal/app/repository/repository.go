@@ -6,9 +6,8 @@ import (
 )
 
 type URLRepository interface {
-	AddURL(shortURL string, originalURL string) error
+	AddURL(shortURL string, originalURL string) (string, error)
 	GetURL(shortURL string) (string, error)
-	GetExistingURL(originalURL string) string
 
 	CreateURLRepository() (*URLRepositoryState, error)
 	RestoreURLRepository(m *URLRepositoryState) error
@@ -24,12 +23,20 @@ func CreateInMemoryURLRepository() *URLRepositoryImpl {
 	}
 }
 
-func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string) error {
+func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string) (string, error) {
 	_, ok := ms.repo.LoadOrStore(shortURL, originalURL)
 	if ok {
-		return errors.New("this URL already exists")
+		var existingURL string
+		ms.repo.Range(func(key, value any) bool {
+			if value == originalURL {
+				existingURL = key.(string)
+				return false
+			}
+			return true
+		})
+		return existingURL, errors.New("this URL already exists")
 	} else {
-		return nil
+		return shortURL, nil
 	}
 }
 
@@ -40,18 +47,6 @@ func (ms *URLRepositoryImpl) GetURL(shortURL string) (string, error) {
 		return "", errors.New("this URL was not found")
 	}
 	return value.(string), nil
-}
-
-func (ms *URLRepositoryImpl) GetExistingURL(originalURL string) string {
-	var foundKey string
-	ms.repo.Range(func(key, value any) bool {
-		if value == originalURL {
-			foundKey = key.(string)
-			return false
-		}
-		return true
-	})
-	return foundKey
 }
 
 func (ms *URLRepositoryImpl) deepCopyValues() map[string]string {
