@@ -75,12 +75,13 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 			return
 		}
 
+		c.Header("Content-Type", "application/json")
+
 		shortURL, err := handler.service.AddingURL(urlRequest.OriginalURL)
 		if err != nil {
 			c.String(http.StatusConflict, handler.config.ShortURL+shortURL)
 			return
 		}
-		c.Writer.Header().Set("Content-Type", "application/json")
 		c.Status(http.StatusCreated)
 
 		urlResponse := marshal.URLResponse{ShortURL: handler.config.ShortURL + shortURL}
