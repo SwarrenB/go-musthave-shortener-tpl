@@ -126,6 +126,8 @@ func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 
 	var requestURLs []URLRequest
 
+	c.Header("Content-Type", "application/json")
+
 	if err := json.NewDecoder(c.Request.Body).Decode(&requestURLs); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format"})
 		return
@@ -146,6 +148,5 @@ func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 		}
 	}
 
-	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusCreated, responseURLs)
 }
