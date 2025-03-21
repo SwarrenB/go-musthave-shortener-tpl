@@ -79,7 +79,7 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 
 		shortURL, err := handler.service.AddingURL(urlRequest.OriginalURL)
 		if err != nil {
-			c.String(http.StatusConflict, handler.config.ShortURL+shortURL)
+			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"result": handler.config.ShortURL + shortURL})
 			return
 		}
 		c.Status(http.StatusCreated)
