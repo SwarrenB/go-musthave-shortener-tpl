@@ -22,23 +22,36 @@ type Server struct {
 	log     zap.Logger
 }
 
+func getRepository(config *config.Config, defaultRepo repository.URLRepository, database *repository.SQLDatabase, log zap.Logger) repository.URLRepository {
+	if config.DatabaseDSN == "" {
+		return defaultRepo
+	}
+
+	database.CreateTables(log)
+	return database
+}
+
 func CreateServer(
 	config *config.Config,
 	repo repository.URLRepository,
 	manager *repository.StateManager,
 	log zap.Logger,
+	database *repository.SQLDatabase,
 ) *Server {
 	generator := urlgenerate.CreateURLGenerator()
-	service := service.CreateShortenerService(repo, generator, config)
 
+	store := getRepository(config, repo, database, log)
+	service := service.CreateShortenerService(store, generator, config)
 	router := gin.Default()
-	handler := handlers.CreateGinHandler(service, *config)
+	handler := handlers.CreateGinHandler(service, *config, log, database)
 	router.Use(middleware.WithLogging(log))
 	router.Use(compress.Compress())
 	router.Use(middleware.Decompress())
+	router.GET("/ping", handler.HandlePingDB(database))
 	router.GET("/:id", handler.GinGetRequestHandler())
 	router.POST("/api/shorten", handler.HandlePostJSON())
 	router.POST("/", handler.GinPostRequestHandler())
+	router.POST("/api/shorten/batch", handler.URLCreatorBatch)
 
 	server := http.Server{
 		Addr:    config.ServerAddress,

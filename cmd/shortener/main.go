@@ -27,8 +27,13 @@ func run() error {
 	appConfig := config.CreateGeneralConfig()
 	repo := repository.CreateInMemoryURLRepository()
 	stateManager := repository.CreateStateManager(appConfig, logger)
-	server := server.CreateServer(appConfig, repo, stateManager, logger)
 
+	var database *repository.SQLDatabase
+
+	if appConfig.DatabaseDSN != "" {
+		database = repository.NewSQLDatabaseConnection(appConfig.DatabaseDSN, logger)
+	}
+	server := server.CreateServer(appConfig, repo, stateManager, logger, database)
 	repoState, err := stateManager.LoadFromFile()
 	if err != nil {
 		logger.Error("create repository state error")
