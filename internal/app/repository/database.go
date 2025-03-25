@@ -152,11 +152,13 @@ func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existing
 	defer cancel()
 	record := Record{
 		ID:          0,
-		OriginalURL: originalURL,
 		ShortURL:    shortURL,
+		OriginalURL: originalURL,
 		UserID:      userID,
 	}
-	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, record, userID).Scan(&existingURL)
+	var existingRecord Record
+	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, record, userID).Scan(&existingRecord)
+	existingURL = existingRecord.OriginalURL
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		sqldb.log.Error("failed to set url",
 			zap.String("short_url", shortURL),
@@ -171,6 +173,8 @@ func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existing
 		_ = sqldb.database.QueryRow(utils.GetExistingURLRegular, originalURL).Scan(&existingURL)
 		return existingURL, err
 	}
+
+	sqldb.log.Info("adding to db", zap.String("short_url", shortURL), zap.String("original_url", originalURL))
 	return shortURL, nil
 }
 

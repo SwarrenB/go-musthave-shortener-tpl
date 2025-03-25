@@ -42,8 +42,8 @@ func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string, userID 
 			shortURL,
 			Record{
 				ID:          0,
-				OriginalURL: originalURL,
 				ShortURL:    shortURL,
+				OriginalURL: originalURL,
 				UserID:      userID,
 			})
 		return shortURL, nil
