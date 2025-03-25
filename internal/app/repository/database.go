@@ -135,30 +135,21 @@ func (sqldb *SQLDatabase) CreateTables(logger zap.Logger) {
 func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	var record Record
 	row := sqldb.database.QueryRowContext(ctx, utils.GetURLRegular, shortURL)
-	err = row.Scan(&record)
+	err = row.Scan(&originalURL)
 	if err != nil {
 		sqldb.log.Error("failed to query url",
 			zap.String("short_url", shortURL),
-			zap.String("original_url", record.OriginalURL),
+			zap.String("original_url", originalURL),
 			zap.Error(err))
 	}
 
-	return record.OriginalURL, err
+	return originalURL, err
 }
 func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existingURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	record := Record{
-		ID:          0,
-		ShortURL:    shortURL,
-		OriginalURL: originalURL,
-		UserID:      userID,
-	}
-	var existingRecord Record
-	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, record, userID).Scan(&existingRecord)
-	existingURL = existingRecord.OriginalURL
+	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, originalURL, userID).Scan(&existingURL)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		sqldb.log.Error("failed to set url",
 			zap.String("short_url", shortURL),
