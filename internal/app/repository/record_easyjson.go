@@ -17,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson15d5d517DecodeGithubComSwarrenBGoMusthaveShortenerTplInternalAppRepository(in *jlexer.Lexer, out *FileRecord) {
+func easyjson15d5d517DecodeGithubComSwarrenBGoMusthaveShortenerTplInternalAppRepository(in *jlexer.Lexer, out *Record) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -52,7 +52,7 @@ func easyjson15d5d517DecodeGithubComSwarrenBGoMusthaveShortenerTplInternalAppRep
 		in.Consumed()
 	}
 }
-func easyjson15d5d517EncodeGithubComSwarrenBGoMusthaveShortenerTplInternalAppRepository(out *jwriter.Writer, in FileRecord) {
+func easyjson15d5d517EncodeGithubComSwarrenBGoMusthaveShortenerTplInternalAppRepository(out *jwriter.Writer, in Record) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -75,25 +75,25 @@ func easyjson15d5d517EncodeGithubComSwarrenBGoMusthaveShortenerTplInternalAppRep
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v FileRecord) MarshalJSON() ([]byte, error) {
+func (v Record) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson15d5d517EncodeGithubComSwarrenBGoMusthaveShortenerTplInternalAppRepository(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v FileRecord) MarshalEasyJSON(w *jwriter.Writer) {
+func (v Record) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson15d5d517EncodeGithubComSwarrenBGoMusthaveShortenerTplInternalAppRepository(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *FileRecord) UnmarshalJSON(data []byte) error {
+func (v *Record) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjson15d5d517DecodeGithubComSwarrenBGoMusthaveShortenerTplInternalAppRepository(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *FileRecord) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *Record) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson15d5d517DecodeGithubComSwarrenBGoMusthaveShortenerTplInternalAppRepository(l, v)
 }

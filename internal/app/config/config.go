@@ -19,6 +19,7 @@ type Config struct {
 	ShortURL        string `env:"BASE_URL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	DatabaseDSN     string `env:"DATABASE_DSN"`
+	SecretKey       string `env:"SECRET_KEY"`
 }
 
 func (s ServerAddress) String() string {
@@ -59,6 +60,7 @@ func CreateGeneralConfig() *Config {
 	flag.StringVar(&flagsConfig.ShortURL, "b", "", "URL address http://localhost:8080/{id}")
 	flag.StringVar(&flagsConfig.FileStoragePath, "f", "", "url storage file path")
 	flag.StringVar(&flagsConfig.DatabaseDSN, "d", flagsConfig.DatabaseDSN, "database DSN")
+	flag.StringVar(&flagsConfig.SecretKey, "s", "", "Secret key")
 	flag.Parse()
 
 	if envConfig.ServerAddress != "" {

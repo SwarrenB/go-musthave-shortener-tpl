@@ -12,12 +12,12 @@ import (
 
 func TestStateManager_LoadFromFile(t *testing.T) {
 	t.Parallel()
-
+	//TODO it will be fixed later
 	testRepoState := CreateURLRepositoryState(
-		map[string]string{
-			"XXXYZZZZ": "http://ya.com",
-			"XXXYYZZZ": "http://ya.com",
-			"XXXYYYZZ": "http://ya.com",
+		map[string]Record{
+			"XXXYZZZZ": Record{},
+			"XXXYYZZZ": Record{},
+			"XXXYYYZZ": Record{},
 		},
 	)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/urlgenerate"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/utils"
 	"github.com/gin-gonic/gin"
 	compress "github.com/lf4096/gin-compress"
 	"go.uber.org/zap"
@@ -44,6 +45,11 @@ func CreateServer(
 	service := service.CreateShortenerService(store, generator, config)
 	router := gin.Default()
 	handler := handlers.CreateGinHandler(service, *config, log, database)
+	if config.SecretKey == "" {
+		log.Warn("SecretKey not provided, generating a random one (will reset on each restart)")
+		config.SecretKey = utils.GenerateRandomSecretKey()
+	}
+	router.Use(middleware.AuthMiddleware(config.SecretKey, log))
 	router.Use(middleware.WithLogging(log))
 	router.Use(compress.Compress())
 	router.Use(middleware.Decompress())

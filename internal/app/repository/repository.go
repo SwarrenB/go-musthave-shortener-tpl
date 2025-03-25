@@ -6,11 +6,12 @@ import (
 )
 
 type URLRepository interface {
-	AddURL(shortURL string, originalURL string) (string, error)
+	AddURL(shortURL string, originalURL string, userID string) (string, error)
 	GetURL(shortURL string) (string, error)
 
 	CreateURLRepository() (*URLRepositoryState, error)
 	RestoreURLRepository(m *URLRepositoryState) error
+	GetURLByUserID(userID string) ([]Record, error)
 }
 
 type URLRepositoryImpl struct {
@@ -23,12 +24,12 @@ func CreateInMemoryURLRepository() *URLRepositoryImpl {
 	}
 }
 
-func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string) (string, error) {
+func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string, userID string) (string, error) {
 	_, ok := ms.repo.LoadOrStore(shortURL, originalURL)
 	if ok {
 		var existingURL string
 		ms.repo.Range(func(key, value any) bool {
-			if value == originalURL {
+			if value.(Record).OriginalURL == originalURL {
 				existingURL = key.(string)
 				return false
 			}
@@ -49,10 +50,10 @@ func (ms *URLRepositoryImpl) GetURL(shortURL string) (string, error) {
 	return value.(string), nil
 }
 
-func (ms *URLRepositoryImpl) deepCopyValues() map[string]string {
-	copy := make(map[string]string)
+func (ms *URLRepositoryImpl) deepCopyValues() map[string]Record {
+	copy := make(map[string]Record)
 	ms.repo.Range(func(key, value any) bool {
-		copy[key.(string)] = value.(string)
+		copy[key.(string)] = value.(Record)
 		return true
 	})
 
@@ -68,4 +69,16 @@ func (ms *URLRepositoryImpl) RestoreURLRepository(m *URLRepositoryState) error {
 		ms.repo.Store(k, v)
 	}
 	return nil
+}
+
+func (ms *URLRepositoryImpl) GetURLByUserID(userID string) ([]Record, error) {
+	var results []Record
+	ms.repo.Range(func(key, value any) bool {
+		if value.(Record).UserID == userID {
+			results = append(results, value.(Record))
+			return false
+		}
+		return true
+	})
+	return results, nil
 }

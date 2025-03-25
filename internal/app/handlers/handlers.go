@@ -32,13 +32,19 @@ func CreateGinHandler(service service.ServiceImpl, config config.Config, logger 
 
 func (handler *Handler) GinPostRequestHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var userIDStr string
+		if uid, exists := c.Get("userID"); exists {
+			if str, ok := uid.(string); ok {
+				userIDStr = str
+			}
+		}
 		body, err := io.ReadAll(c.Request.Body)
 		isURL := string(body[0:4]) == "http"
 		if err != nil || !isURL {
 			c.String(http.StatusBadRequest, "URL is invalid.")
 			return
 		} else {
-			shortURL, err := handler.service.AddingURL(string(body))
+			shortURL, err := handler.service.AddingURL(string(body), userIDStr)
 			if err != nil {
 				c.String(http.StatusConflict, handler.config.ShortURL+shortURL)
 			} else {
@@ -68,6 +74,12 @@ func (handler *Handler) GinGetRequestHandler() gin.HandlerFunc {
 
 func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var userIDStr string
+		if uid, exists := c.Get("userID"); exists {
+			if str, ok := uid.(string); ok {
+				userIDStr = str
+			}
+		}
 		urlRequest := marshal.URLRequest{OriginalURL: ""}
 
 		if err := easyjson.UnmarshalFromReader(c.Request.Body, &urlRequest); err != nil {
@@ -77,7 +89,7 @@ func (handler *Handler) HandlePostJSON() gin.HandlerFunc {
 
 		c.Header("Content-Type", "application/json")
 
-		shortURL, err := handler.service.AddingURL(urlRequest.OriginalURL)
+		shortURL, err := handler.service.AddingURL(urlRequest.OriginalURL, userIDStr)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"result": handler.config.ShortURL + shortURL})
 			return
@@ -124,7 +136,12 @@ type URLResponse struct {
 
 func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 	defer c.Request.Body.Close()
-
+	var userIDStr string
+	if uid, exists := c.Get("userID"); exists {
+		if str, ok := uid.(string); ok {
+			userIDStr = str
+		}
+	}
 	var requestURLs []URLRequest
 	c.Header("Content-Type", "application/json")
 
@@ -136,7 +153,7 @@ func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 	responseURLs := make([]URLResponse, len(requestURLs))
 
 	for i, requestURL := range requestURLs {
-		shortURL, err := handler.service.AddingURL(requestURL.OriginalURL)
+		shortURL, err := handler.service.AddingURL(requestURL.OriginalURL, userIDStr)
 		if err != nil {
 			c.String(http.StatusConflict, handler.config.ShortURL+shortURL)
 			return
@@ -150,4 +167,47 @@ func (handler *Handler) URLCreatorBatch(c *gin.Context) {
 
 	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusCreated, responseURLs)
+}
+
+func (handler *Handler) GetUserURLList(c *gin.Context) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID, exists := c.Get("userID")
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+		userIDStr, ok := userID.(string)
+		if !ok || userIDStr == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		records, err := handler.service.GetUserURLList(userIDStr)
+		if err != nil {
+			handler.logger.Error("Failed to get user URLs", zap.Error(err))
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if len(records) == 0 {
+			c.Status(http.StatusNoContent)
+			return
+		}
+
+		var resp []struct {
+			ShortURL    string `json:"short_url"`
+			OriginalURL string `json:"original_url"`
+		}
+		for _, rec := range records {
+			resp = append(resp, struct {
+				ShortURL    string `json:"short_url"`
+				OriginalURL string `json:"original_url"`
+			}{
+				ShortURL:    handler.config.ServerAddress + "/" + rec.ShortURL,
+				OriginalURL: rec.OriginalURL,
+			})
+		}
+
+		c.JSON(http.StatusOK, resp)
+	}
 }

@@ -147,10 +147,10 @@ func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error
 
 	return originalURL, err
 }
-func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) (existingURL string, err error) {
+func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existingURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, originalURL).Scan(&existingURL)
+	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, originalURL, userID).Scan(&existingURL)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		sqldb.log.Error("failed to set url",
 			zap.String("short_url", shortURL),
@@ -166,4 +166,23 @@ func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) (existingURL stri
 		return existingURL, err
 	}
 	return shortURL, nil
+}
+
+func (sqldb *SQLDatabase) GetURLByUserID(userID string) ([]Record, error) {
+
+	rows, err := sqldb.database.Query(utils.GetURLsByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []Record
+	for rows.Next() {
+		var rec Record
+		if err := rows.Scan(&rec.ShortURL, &rec.OriginalURL); err != nil {
+			return nil, err
+		}
+		results = append(results, rec)
+	}
+	return results, nil
 }

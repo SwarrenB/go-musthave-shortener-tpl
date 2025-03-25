@@ -100,7 +100,8 @@ func Test_ginGetRequestHandler(t *testing.T) {
 	service := service.CreateShortenerService(repo, generator, appConfig)
 	handler := CreateGinHandler(service, *appConfig, log, nil)
 	originalURL := "http://practictum.yandex.ru"
-	shortURL, _ := handler.service.AddingURL(originalURL)
+	userID := "1"
+	shortURL, _ := handler.service.AddingURL(originalURL, userID)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodGet, shortURL, nil)
