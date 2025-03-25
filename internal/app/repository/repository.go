@@ -25,7 +25,8 @@ func CreateInMemoryURLRepository() *URLRepositoryImpl {
 }
 
 func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string, userID string) (string, error) {
-	_, ok := ms.repo.LoadOrStore(shortURL, originalURL)
+
+	_, ok := ms.repo.Load(shortURL)
 	if ok {
 		var existingURL string
 		ms.repo.Range(func(key, value any) bool {
@@ -37,6 +38,14 @@ func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string, userID 
 		})
 		return existingURL, errors.New("this URL already exists")
 	} else {
+		ms.repo.Store(
+			shortURL,
+			Record{
+				ID:          0,
+				OriginalURL: originalURL,
+				ShortURL:    shortURL,
+				UserID:      userID,
+			})
 		return shortURL, nil
 	}
 }
@@ -47,7 +56,7 @@ func (ms *URLRepositoryImpl) GetURL(shortURL string) (string, error) {
 	if !ok {
 		return "", errors.New("this URL was not found")
 	}
-	return value.(string), nil
+	return value.(Record).OriginalURL, nil
 }
 
 func (ms *URLRepositoryImpl) deepCopyValues() map[string]Record {

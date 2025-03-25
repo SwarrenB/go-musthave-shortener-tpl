@@ -130,9 +130,7 @@ func (writer *FileWriter) SaveState(state *URLRepositoryState) error {
 
 	buffWriter := bufio.NewWriter(writer.file)
 	defer buffWriter.Flush()
-
-	for _, originalURLRecord := range urls {
-		record := originalURLRecord
+	for _, record := range urls {
 
 		if _, err := easyjson.MarshalToWriter(record, buffWriter); err != nil {
 			return fmt.Errorf("marshalling error: %s", err)
@@ -147,7 +145,6 @@ func (writer *FileWriter) SaveState(state *URLRepositoryState) error {
 			zap.String("short_url", record.ShortURL),
 			zap.String("original_url", record.OriginalURL),
 		)
-
 	}
 
 	return nil
