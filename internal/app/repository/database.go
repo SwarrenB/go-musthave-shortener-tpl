@@ -135,17 +135,17 @@ func (sqldb *SQLDatabase) CreateTables(logger zap.Logger) {
 func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
+	var record Record
 	row := sqldb.database.QueryRowContext(ctx, utils.GetURLRegular, shortURL)
-	err = row.Scan(&originalURL)
+	err = row.Scan(&record)
 	if err != nil {
 		sqldb.log.Error("failed to query url",
 			zap.String("short_url", shortURL),
-			zap.String("original_url", originalURL),
+			zap.String("original_url", record.OriginalURL),
 			zap.Error(err))
 	}
 
-	return originalURL, err
+	return record.OriginalURL, err
 }
 func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existingURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
