@@ -144,6 +144,7 @@ func (writer *FileWriter) SaveState(state *URLRepositoryState) error {
 			zap.Int("uuid", record.ID),
 			zap.String("short_url", record.ShortURL),
 			zap.String("original_url", record.OriginalURL),
+			zap.String("user_id", record.UserID),
 		)
 	}
 

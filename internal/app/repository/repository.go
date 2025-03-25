@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+var index int = 0
+
 type URLRepository interface {
 	AddURL(shortURL string, originalURL string, userID string) (string, error)
 	GetURL(shortURL string) (string, error)
@@ -41,11 +43,12 @@ func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string, userID 
 		ms.repo.Store(
 			shortURL,
 			Record{
-				ID:          0,
+				ID:          index,
 				ShortURL:    shortURL,
 				OriginalURL: originalURL,
 				UserID:      userID,
 			})
+		index++
 		return shortURL, nil
 	}
 }

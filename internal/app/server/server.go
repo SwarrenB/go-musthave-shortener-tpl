@@ -58,6 +58,7 @@ func CreateServer(
 	router.POST("/api/shorten", handler.HandlePostJSON())
 	router.POST("/", handler.GinPostRequestHandler())
 	router.POST("/api/shorten/batch", handler.GinPostHandlerBatch)
+	router.GET("/api/user/urls", handler.GetUserURLList())
 
 	server := http.Server{
 		Addr:    config.ServerAddress,

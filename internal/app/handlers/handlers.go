@@ -169,7 +169,7 @@ func (handler *Handler) GinPostHandlerBatch(c *gin.Context) {
 	c.JSON(http.StatusCreated, responseURLs)
 }
 
-func (handler *Handler) GetUserURLList(c *gin.Context) gin.HandlerFunc {
+func (handler *Handler) GetUserURLList() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, exists := c.Get("userID")
 		if !exists {
