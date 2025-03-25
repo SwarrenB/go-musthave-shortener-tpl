@@ -15,9 +15,9 @@ func TestStateManager_LoadFromFile(t *testing.T) {
 	//TODO it will be fixed later
 	testRepoState := CreateURLRepositoryState(
 		map[string]Record{
-			"XXXYZZZZ": Record{},
-			"XXXYYZZZ": Record{},
-			"XXXYYYZZ": Record{},
+			"XXXYZZZZ": {0, "XXXYZZZZ", "ZZZZXXXYYY", "1"},
+			"XXXYYZZZ": {1, "XXXYZZZZ", "ZZZZXXXYYY", "1"},
+			"XXXYYYZZ": {2, "XXXYZZZZ", "ZZZZXXXYYY", "1"},
 		},
 	)
 
