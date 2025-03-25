@@ -9,7 +9,7 @@ import (
 type ServiceImpl interface {
 	AddingURL(originalURL string, userID string) (string, error)
 	GetOriginalURL(shortURL string) (string, error)
-	GetUserURLList(userID string) ([]repository.Record, error)
+	GetURLByUserID(userID string) ([]repository.Record, error)
 }
 
 type ShortenerService struct {
@@ -48,6 +48,6 @@ func (s *ShortenerService) GetOriginalURL(shortURL string) (string, error) {
 	return originalURL, nil
 }
 
-func (s *ShortenerService) GetUserURLList(userID string) ([]repository.Record, error) {
+func (s *ShortenerService) GetURLByUserID(userID string) ([]repository.Record, error) {
 	return s.repo.GetURLByUserID(userID)
 }

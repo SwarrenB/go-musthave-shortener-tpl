@@ -134,7 +134,7 @@ type URLResponse struct {
 	ShortURL      string `json:"short_url"`
 }
 
-func (handler *Handler) URLCreatorBatch(c *gin.Context) {
+func (handler *Handler) GinPostHandlerBatch(c *gin.Context) {
 	defer c.Request.Body.Close()
 	var userIDStr string
 	if uid, exists := c.Get("userID"); exists {
@@ -182,7 +182,7 @@ func (handler *Handler) GetUserURLList(c *gin.Context) gin.HandlerFunc {
 			return
 		}
 
-		records, err := handler.service.GetUserURLList(userIDStr)
+		records, err := handler.service.GetURLByUserID(userIDStr)
 		if err != nil {
 			handler.logger.Error("Failed to get user URLs", zap.Error(err))
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
