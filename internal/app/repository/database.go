@@ -150,7 +150,13 @@ func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error
 func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existingURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, originalURL, userID).Scan(&existingURL)
+	record := Record{
+		ID:          0,
+		OriginalURL: originalURL,
+		ShortURL:    shortURL,
+		UserID:      userID,
+	}
+	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, record, userID).Scan(&existingURL)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		sqldb.log.Error("failed to set url",
 			zap.String("short_url", shortURL),
