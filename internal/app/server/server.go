@@ -24,8 +24,8 @@ type Server struct {
 }
 
 func getRepository(config *config.Config, defaultRepo repository.URLRepository, database *repository.SQLDatabase, log zap.Logger) repository.URLRepository {
-	if config.DatabaseDSN == "" {
-		return defaultRepo
+	if err := repository.MigrateDB(config.DatabaseDSN, log); err != nil {
+		log.Fatal("Database migration failed: %v", zap.Error(err))
 	}
 
 	database.CreateTables(log)

@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func MigrateDB(ps string, logger *zap.Logger) error {
+func MigrateDB(ps string, logger zap.Logger) error {
 	db, err := sql.Open("pgx", ps)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
