@@ -9,6 +9,7 @@ import (
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/utils"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 )
@@ -28,6 +29,7 @@ type SQLDatabase struct {
 	database *sql.DB
 	dbConfig *DBConfig
 	log      zap.Logger
+	dbpool   *pgxpool.Pool
 }
 
 // CreateURLRepository implements repository.URLRepository.
@@ -47,6 +49,10 @@ func NewDatabase(
 	driverName string,
 	dsn string,
 ) (*SQLDatabase, error) {
+	dbpool, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		return nil, errors.New("failed to connect to database")
+	}
 	dataSourceName, dbConfig, err := dataSourceBuilder(dsn)
 	if err != nil {
 		return nil, errors.New("error parsing database DSN")
@@ -61,6 +67,7 @@ func NewDatabase(
 		database: sqldb,
 		dbConfig: dbConfig,
 		log:      log,
+		dbpool:   dbpool,
 	}, nil
 }
 
@@ -115,7 +122,7 @@ func NewSQLDatabaseConnection(dsn string, log zap.Logger) *SQLDatabase {
 func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	row := sqldb.database.QueryRowContext(ctx, utils.GetURLRegular, shortURL)
+	row := sqldb.dbpool.QueryRow(ctx, utils.GetURLRegular, shortURL)
 	err = row.Scan(&originalURL)
 	if err != nil {
 		sqldb.log.Error("failed to query url",
@@ -129,7 +136,7 @@ func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error
 func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existingURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, originalURL, userID).Scan(&existingURL)
+	err = sqldb.dbpool.QueryRow(ctx, utils.SetURLRegular, shortURL, originalURL, userID).Scan(&existingURL)
 	if err != nil || !errors.Is(err, sql.ErrNoRows) {
 		sqldb.log.Info("failed to set url",
 			zap.String("short_url", shortURL),
@@ -152,7 +159,7 @@ func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existing
 func (sqldb *SQLDatabase) GetURLByUserID(userID string) ([]Record, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	rows, err := sqldb.database.QueryContext(ctx, utils.GetURLsByUserID, userID)
+	rows, err := sqldb.dbpool.Query(ctx, utils.GetURLsByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
