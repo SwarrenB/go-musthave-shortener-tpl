@@ -9,6 +9,7 @@ import (
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/repository"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/service"
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/urlgenerate"
+	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/utils"
 	"github.com/gin-gonic/gin"
 	compress "github.com/lf4096/gin-compress"
 	"go.uber.org/zap"
@@ -22,15 +23,6 @@ type Server struct {
 	log     zap.Logger
 }
 
-func getRepository(config *config.Config, defaultRepo repository.URLRepository, database *repository.SQLDatabase, log zap.Logger) repository.URLRepository {
-	if config.DatabaseDSN == "" {
-		return defaultRepo
-	}
-
-	database.CreateTables(log)
-	return database
-}
-
 func CreateServer(
 	config *config.Config,
 	repo repository.URLRepository,
@@ -40,10 +32,20 @@ func CreateServer(
 ) *Server {
 	generator := urlgenerate.CreateURLGenerator()
 
-	store := getRepository(config, repo, database, log)
+	var store repository.URLRepository
+	if config.DatabaseDSN != "" {
+		store = database
+	} else {
+		store = repo
+	}
 	service := service.CreateShortenerService(store, generator, config)
 	router := gin.Default()
 	handler := handlers.CreateGinHandler(service, *config, log, database)
+	if config.SecretKey == "" {
+		log.Warn("SecretKey not provided, generating a random one (will reset on each restart)")
+		config.SecretKey = utils.GenerateRandomSecretKey()
+	}
+	router.Use(middleware.AuthMiddleware(config.SecretKey, log))
 	router.Use(middleware.WithLogging(log))
 	router.Use(compress.Compress())
 	router.Use(middleware.Decompress())
@@ -51,7 +53,8 @@ func CreateServer(
 	router.GET("/:id", handler.GinGetRequestHandler())
 	router.POST("/api/shorten", handler.HandlePostJSON())
 	router.POST("/", handler.GinPostRequestHandler())
-	router.POST("/api/shorten/batch", handler.URLCreatorBatch)
+	router.POST("/api/shorten/batch", handler.GinPostHandlerBatch)
+	router.GET("/api/user/urls", handler.GetUserURLList())
 
 	server := http.Server{
 		Addr:    config.ServerAddress,

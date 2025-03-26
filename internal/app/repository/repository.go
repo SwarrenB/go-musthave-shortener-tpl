@@ -5,12 +5,15 @@ import (
 	"sync"
 )
 
+var index int = 0
+
 type URLRepository interface {
-	AddURL(shortURL string, originalURL string) (string, error)
+	AddURL(shortURL string, originalURL string, userID string) (string, error)
 	GetURL(shortURL string) (string, error)
 
 	CreateURLRepository() (*URLRepositoryState, error)
 	RestoreURLRepository(m *URLRepositoryState) error
+	GetURLByUserID(userID string) ([]Record, error)
 }
 
 type URLRepositoryImpl struct {
@@ -23,12 +26,13 @@ func CreateInMemoryURLRepository() *URLRepositoryImpl {
 	}
 }
 
-func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string) (string, error) {
-	_, ok := ms.repo.LoadOrStore(shortURL, originalURL)
+func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string, userID string) (string, error) {
+
+	_, ok := ms.repo.Load(shortURL)
 	if ok {
 		var existingURL string
 		ms.repo.Range(func(key, value any) bool {
-			if value == originalURL {
+			if value.(Record).OriginalURL == originalURL {
 				existingURL = key.(string)
 				return false
 			}
@@ -36,6 +40,15 @@ func (ms *URLRepositoryImpl) AddURL(shortURL string, originalURL string) (string
 		})
 		return existingURL, errors.New("this URL already exists")
 	} else {
+		ms.repo.Store(
+			shortURL,
+			Record{
+				ID:          index,
+				ShortURL:    shortURL,
+				OriginalURL: originalURL,
+				UserID:      userID,
+			})
+		index++
 		return shortURL, nil
 	}
 }
@@ -46,13 +59,13 @@ func (ms *URLRepositoryImpl) GetURL(shortURL string) (string, error) {
 	if !ok {
 		return "", errors.New("this URL was not found")
 	}
-	return value.(string), nil
+	return value.(Record).OriginalURL, nil
 }
 
-func (ms *URLRepositoryImpl) deepCopyValues() map[string]string {
-	copy := make(map[string]string)
+func (ms *URLRepositoryImpl) deepCopyValues() map[string]Record {
+	copy := make(map[string]Record)
 	ms.repo.Range(func(key, value any) bool {
-		copy[key.(string)] = value.(string)
+		copy[key.(string)] = value.(Record)
 		return true
 	})
 
@@ -68,4 +81,22 @@ func (ms *URLRepositoryImpl) RestoreURLRepository(m *URLRepositoryState) error {
 		ms.repo.Store(k, v)
 	}
 	return nil
+}
+
+func (ms *URLRepositoryImpl) GetURLByUserID(userID string) ([]Record, error) {
+	var results []Record
+	var err error = nil
+	ms.repo.Range(func(key, value any) bool {
+		if curr, ok := value.(Record); ok {
+			if curr.UserID == userID {
+				results = append(results, curr)
+				return false
+			}
+		} else {
+			err = errors.New("failed to get url by user id")
+			return false
+		}
+		return true
+	})
+	return results, err
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/SwarrenB/go-musthave-shortener-tpl/internal/app/utils"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 )
@@ -28,19 +29,11 @@ type SQLDatabase struct {
 	database *sql.DB
 	dbConfig *DBConfig
 	log      zap.Logger
+	dbpool   *pgxpool.Pool
 }
 
 // CreateURLRepository implements repository.URLRepository.
 func (sqldb *SQLDatabase) CreateURLRepository() (*URLRepositoryState, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if _, err := sqldb.database.ExecContext(ctx, utils.CreateTableQuery); err != nil {
-		sqldb.log.Fatal("Failed to create tables",
-			zap.Error(err),
-			zap.String("Query", utils.CreateTableQuery),
-		)
-		return nil, err
-	}
 	return nil, nil
 }
 
@@ -56,6 +49,10 @@ func NewDatabase(
 	driverName string,
 	dsn string,
 ) (*SQLDatabase, error) {
+	dbpool, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		return nil, errors.New("failed to connect to database")
+	}
 	dataSourceName, dbConfig, err := dataSourceBuilder(dsn)
 	if err != nil {
 		return nil, errors.New("error parsing database DSN")
@@ -70,6 +67,7 @@ func NewDatabase(
 		database: sqldb,
 		dbConfig: dbConfig,
 		log:      log,
+		dbpool:   dbpool,
 	}, nil
 }
 
@@ -121,22 +119,10 @@ func NewSQLDatabaseConnection(dsn string, log zap.Logger) *SQLDatabase {
 	return sqldb
 }
 
-func (sqldb *SQLDatabase) CreateTables(logger zap.Logger) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if _, err := sqldb.database.ExecContext(ctx, utils.CreateTableQuery); err != nil {
-		logger.Fatal("Failed to create tables",
-			zap.Error(err),
-			zap.String("Query", utils.CreateTableQuery),
-		)
-	}
-}
-
 func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	row := sqldb.database.QueryRowContext(ctx, utils.GetURLRegular, shortURL)
+	row := sqldb.dbpool.QueryRow(ctx, utils.GetURLRegular, shortURL)
 	err = row.Scan(&originalURL)
 	if err != nil {
 		sqldb.log.Error("failed to query url",
@@ -147,23 +133,52 @@ func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error
 
 	return originalURL, err
 }
-func (sqldb *SQLDatabase) AddURL(shortURL, originalURL string) (existingURL string, err error) {
+func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existingURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, originalURL).Scan(&existingURL)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		sqldb.log.Error("failed to set url",
+	err = sqldb.dbpool.QueryRow(ctx, utils.SetURLRegular, shortURL, originalURL, userID).Scan(&existingURL)
+	if err != nil || !errors.Is(err, sql.ErrNoRows) {
+		sqldb.log.Info("failed to set url",
 			zap.String("short_url", shortURL),
 			zap.String("original_url", originalURL),
 			zap.Error(err))
 		return existingURL, err
 	} else if errors.Is(err, sql.ErrNoRows) {
-		sqldb.log.Error("this url already exists",
+		sqldb.log.Info("this url already exists",
 			zap.String("short_url", shortURL),
 			zap.String("original_url", originalURL),
 			zap.Error(err))
 		_ = sqldb.database.QueryRow(utils.GetExistingURLRegular, originalURL).Scan(&existingURL)
 		return existingURL, err
 	}
+
+	sqldb.log.Info("adding to db", zap.String("short_url", shortURL), zap.String("original_url", originalURL))
 	return shortURL, nil
+}
+
+func (sqldb *SQLDatabase) GetURLByUserID(userID string) ([]Record, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	rows, err := sqldb.dbpool.Query(ctx, utils.GetURLsByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []Record
+	var index = 0
+	for rows.Next() {
+		var rec Record
+		if err := rows.Scan(&rec.ShortURL, &rec.OriginalURL); err != nil {
+			return nil, err
+		}
+		rec.UserID = userID
+		rec.ID = index
+		results = append(results, rec)
+		index++
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return results, nil
 }

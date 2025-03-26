@@ -44,7 +44,7 @@ func (sm *StateManager) LoadFromFile() (*URLRepositoryState, error) {
 	state, err := reader.LoadState()
 
 	for k, v := range state.state {
-		sm.log.Info("state to load from file", zap.String("shortUrl", k), zap.String("origUrl", v))
+		sm.log.Info("state to load from file", zap.String("shortUrl", k), zap.String("origUrl", v.OriginalURL))
 	}
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (sm *StateManager) SaveToFile(state *URLRepositoryState) error {
 	}
 	defer writer.Close()
 	for k, v := range state.state {
-		sm.log.Info("state to save", zap.String("shortUrl", k), zap.String("origUrl", v))
+		sm.log.Info("state to save", zap.String("shortUrl", k), zap.String("origUrl", v.OriginalURL))
 	}
 	err = writer.SaveState(state)
 	if err != nil {
@@ -84,7 +84,7 @@ func CreateReader(fileName string, log zap.Logger) (*FileReader, error) {
 }
 
 func (reader *FileReader) LoadState() (*URLRepositoryState, error) {
-	state := make(map[string]string)
+	state := make(map[string]Record)
 
 	if err := reader.Reset(); err != nil {
 		return nil, err
@@ -92,14 +92,14 @@ func (reader *FileReader) LoadState() (*URLRepositoryState, error) {
 
 	for reader.scanner.Scan() {
 		data := reader.scanner.Bytes()
-		record := FileRecord{}
+		record := Record{}
 
 		err := record.UnmarshalJSON(data)
 		if err != nil {
 			return nil, fmt.Errorf("unmarshalling error: %s", err)
 		}
 
-		state[record.ShortURL] = record.OriginalURL
+		state[record.ShortURL] = record
 		reader.log.Info("record loaded",
 			zap.Int("uuid", record.ID),
 			zap.String("short_url", record.ShortURL),
@@ -130,14 +130,7 @@ func (writer *FileWriter) SaveState(state *URLRepositoryState) error {
 
 	buffWriter := bufio.NewWriter(writer.file)
 	defer buffWriter.Flush()
-
-	index := 1
-	for shortURL, originalURL := range urls {
-		record := &FileRecord{
-			ID:          index,
-			ShortURL:    shortURL,
-			OriginalURL: originalURL,
-		}
+	for _, record := range urls {
 
 		if _, err := easyjson.MarshalToWriter(record, buffWriter); err != nil {
 			return fmt.Errorf("marshalling error: %s", err)
@@ -151,9 +144,8 @@ func (writer *FileWriter) SaveState(state *URLRepositoryState) error {
 			zap.Int("uuid", record.ID),
 			zap.String("short_url", record.ShortURL),
 			zap.String("original_url", record.OriginalURL),
+			zap.String("user_id", record.UserID),
 		)
-
-		index++
 	}
 
 	return nil
