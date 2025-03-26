@@ -23,15 +23,6 @@ type Server struct {
 	log     zap.Logger
 }
 
-func getRepository(config *config.Config, defaultRepo repository.URLRepository, database *repository.SQLDatabase, log zap.Logger) repository.URLRepository {
-	if err := repository.MigrateDB(config.DatabaseDSN, log); err != nil {
-		log.Fatal("Database migration failed: %v", zap.Error(err))
-	}
-
-	database.CreateTables(log)
-	return database
-}
-
 func CreateServer(
 	config *config.Config,
 	repo repository.URLRepository,
@@ -41,7 +32,12 @@ func CreateServer(
 ) *Server {
 	generator := urlgenerate.CreateURLGenerator()
 
-	store := getRepository(config, repo, database, log)
+	var store repository.URLRepository
+	if config.DatabaseDSN != "" {
+		store = database
+	} else {
+		store = repo
+	}
 	service := service.CreateShortenerService(store, generator, config)
 	router := gin.Default()
 	handler := handlers.CreateGinHandler(service, *config, log, database)

@@ -32,15 +32,6 @@ type SQLDatabase struct {
 
 // CreateURLRepository implements repository.URLRepository.
 func (sqldb *SQLDatabase) CreateURLRepository() (*URLRepositoryState, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if _, err := sqldb.database.ExecContext(ctx, utils.CreateTableQuery); err != nil {
-		sqldb.log.Fatal("Failed to create tables",
-			zap.Error(err),
-			zap.String("Query", utils.CreateTableQuery),
-		)
-		return nil, err
-	}
 	return nil, nil
 }
 
@@ -119,17 +110,6 @@ func NewSQLDatabaseConnection(dsn string, log zap.Logger) *SQLDatabase {
 		return nil
 	}
 	return sqldb
-}
-
-func (sqldb *SQLDatabase) CreateTables(logger zap.Logger) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if _, err := sqldb.database.ExecContext(ctx, utils.CreateTableQuery); err != nil {
-		logger.Fatal("Failed to create tables",
-			zap.Error(err),
-			zap.String("Query", utils.CreateTableQuery),
-		)
-	}
 }
 
 func (sqldb *SQLDatabase) GetURL(shortURL string) (originalURL string, err error) {

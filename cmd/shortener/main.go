@@ -31,6 +31,9 @@ func run() error {
 	var database *repository.SQLDatabase
 
 	if appConfig.DatabaseDSN != "" {
+		if err := repository.MigrateDB(appConfig.DatabaseDSN, logger); err != nil {
+			logger.Fatal("Database migration failed: %v", zap.Error(err))
+		}
 		database = repository.NewSQLDatabaseConnection(appConfig.DatabaseDSN, logger)
 	}
 	server := server.CreateServer(appConfig, repo, stateManager, logger, database)
