@@ -150,14 +150,14 @@ func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existing
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	err = sqldb.database.QueryRowContext(ctx, utils.SetURLRegular, shortURL, originalURL, userID).Scan(&existingURL)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		sqldb.log.Error("failed to set url",
+	if err != nil || !errors.Is(err, sql.ErrNoRows) {
+		sqldb.log.Info("failed to set url",
 			zap.String("short_url", shortURL),
 			zap.String("original_url", originalURL),
 			zap.Error(err))
 		return existingURL, err
 	} else if errors.Is(err, sql.ErrNoRows) {
-		sqldb.log.Error("this url already exists",
+		sqldb.log.Info("this url already exists",
 			zap.String("short_url", shortURL),
 			zap.String("original_url", originalURL),
 			zap.Error(err))
@@ -170,20 +170,25 @@ func (sqldb *SQLDatabase) AddURL(shortURL, originalURL, userID string) (existing
 }
 
 func (sqldb *SQLDatabase) GetURLByUserID(userID string) ([]Record, error) {
-
-	rows, err := sqldb.database.Query(utils.GetURLsByUserID, userID)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	rows, err := sqldb.database.QueryContext(ctx, utils.GetURLsByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	var results []Record
+	var index = 0
 	for rows.Next() {
 		var rec Record
 		if err := rows.Scan(&rec.ShortURL, &rec.OriginalURL); err != nil {
 			return nil, err
 		}
+		rec.UserID = userID
+		rec.ID = index
 		results = append(results, rec)
+		index++
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

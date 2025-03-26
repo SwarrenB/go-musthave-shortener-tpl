@@ -184,7 +184,7 @@ func (handler *Handler) GetUserURLList() gin.HandlerFunc {
 
 		records, err := handler.service.GetURLByUserID(userIDStr)
 		if err != nil {
-			handler.logger.Error("Failed to get user URLs", zap.Error(err))
+			handler.logger.Info("Failed to get user URLs", zap.Error(err))
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

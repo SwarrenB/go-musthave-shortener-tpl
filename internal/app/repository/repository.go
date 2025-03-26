@@ -85,12 +85,18 @@ func (ms *URLRepositoryImpl) RestoreURLRepository(m *URLRepositoryState) error {
 
 func (ms *URLRepositoryImpl) GetURLByUserID(userID string) ([]Record, error) {
 	var results []Record
+	var err error = nil
 	ms.repo.Range(func(key, value any) bool {
-		if value.(Record).UserID == userID {
-			results = append(results, value.(Record))
+		if curr, ok := value.(Record); ok {
+			if curr.UserID == userID {
+				results = append(results, curr)
+				return false
+			}
+		} else {
+			err = errors.New("failed to get url by user id")
 			return false
 		}
 		return true
 	})
-	return results, nil
+	return results, err
 }
